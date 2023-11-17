@@ -1,3 +1,6 @@
+"""
+Main file for pack
+"""
 import os
 import glob
 import json
@@ -5,22 +8,28 @@ import sys
 import warnings
 import pandas as pd
 from ydata_profiling import ProfileReport
+
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+
 def denormalize(data):
+    """
+    Denormalize a dictionary with nested dictionaries
+    """
     denormalized = {}
-    for key, value in data.items():
-        if isinstance(value, dict):
-            for inner_key, inner_value in value.items():
-                new_key = f"{key}_{inner_key.lower()}"
+    for index, content in data.items():
+        if isinstance(content, dict):
+            for inner_key, inner_value in content.items():
+                new_key = f"{index}_{inner_key.lower()}"
                 denormalized[new_key] = inner_value
         else:
-            denormalized[key] = value
+            denormalized[index] = content
     return denormalized
+
 
 # Load the configuration file
 print("Load source_conf.json")
-with open("source_conf.json", "r") as file:
+with open("source_conf.json", "r", encoding="utf-8") as file:
     config = json.load(file)
 
 # Check if data source is supported
@@ -43,7 +52,7 @@ if csv_files:
         first_csv_file, low_memory=False, memory_map=True, on_bad_lines="skip"
     )
 else:
-    raise Exception("No CSV files found in the provided path.")
+    raise FileNotFoundError("No CSV files found in the provided path.")
 
 profile = ProfileReport(df, minimal=True, title="Profiling Report")
 profile.to_file("report.html")
@@ -54,7 +63,7 @@ profile.to_file("report.json")
 
 # Load the JSON file
 print("Load report.json")
-with open("report.json", "r") as file:
+with open("report.json", "r", encoding="utf-8") as file:
     report = json.load(file)
 
 general_data = denormalize(report["table"])
@@ -85,8 +94,12 @@ variables_data = new_format_data
 general_data_df = pd.DataFrame(general_data)
 
 # Get missing_cells and number_of_observations
-missing_cells = int(general_data_df[general_data_df["key"] == "n_cells_missing"]["value"].values[0])
-number_of_observations = int(general_data_df[general_data_df["key"] == "n"]["value"].values[0])
+missing_cells = int(
+    general_data_df[general_data_df["key"] == "n_cells_missing"]["value"].values[0]
+)
+number_of_observations = int(
+    general_data_df[general_data_df["key"] == "n"]["value"].values[0]
+)
 
 score = pd.DataFrame(
     {
@@ -118,10 +131,7 @@ schemas_data = [
     {
         "key": "dataset",
         "value": config["name"],
-        "scope": {
-            "perimeter": "dataset",
-            "value": config["name"]
-        }
+        "scope": {"perimeter": "dataset", "value": config["name"]},
     }
 ]
 
@@ -130,10 +140,7 @@ for variable_name in report["variables"].keys():
     entry = {
         "key": "column",
         "value": variable_name,
-        "scope": {
-            "perimeter": "column",
-            "value": variable_name
-        }
+        "scope": {"perimeter": "column", "value": variable_name},
     }
     schemas_data.append(entry)
 
@@ -153,11 +160,11 @@ metrics_data = json.loads(metrics_json)
 alerts_data = json.loads(alerts_json)
 
 # Write the Python objects to files in pretty format
-with open("metrics.json", "w") as f:
+with open("metrics.json", "w", encoding="utf-8") as f:
     json.dump(metrics_data, f, indent=4)
 
-with open("recommendations.json", "w") as f:
+with open("recommendations.json", "w", encoding="utf-8") as f:
     json.dump(alerts_data, f, indent=4)
 
-with open("schemas.json", "w") as f:
+with open("schemas.json", "w", encoding="utf-8") as f:
     json.dump(schemas_data, f, indent=4)
