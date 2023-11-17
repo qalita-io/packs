@@ -49,4 +49,4 @@ This pack uses heavily [ydata Profiling](https://github.com/ydataai/ydata-profil
 
 # Contribute
 
-[This pack is part of Qalita Open Source Assets (QOSA) and is open to contribution. You can help us imporve this pack by forking it and submitting a pull request here.](https://github.com/qalita-io/packs)
+[This pack is part of Qalita Open Source Assets (QOSA) and is open to contribution. You can help us improve this pack by forking it and submitting a pull request here.](https://github.com/qalita-io/packs)
