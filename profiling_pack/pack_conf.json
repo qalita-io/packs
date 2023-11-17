@@ -1,0 +1,38 @@
+{
+    "metrics_chart_mapping": [
+        {
+            "metric_key":"n_cells_missing",
+            "chart_type":"area_chart"
+        },
+        {
+            "metric_key":"n",
+            "chart_type":"area_chart"
+        },
+        {
+            "metric_key":"n_cells_missing",
+            "chart_type":"text_header"
+        },
+        {
+            "metric_key":"p_cells_missing",
+            "chart_type":"text_header"
+        }
+    ],
+    "schemas_chart_mapping": [
+        {
+            "metric_key":"n_missing",
+            "chart_type":"area_chart"
+        },
+        {
+            "metric_key":"min",
+            "chart_type":"text_header"
+        },
+        {
+            "metric_key":"max",
+            "chart_type":"text_header"
+        },
+        {
+            "metric_key":"skewness",
+            "chart_type":"text_header"
+        }
+    ]
+}
