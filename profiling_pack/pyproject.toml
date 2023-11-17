@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "profiling-pack"
+version = "1.4.27"
+description = "Pack profiling gives general information about the source"
+authors = ["qalita"]
+license = "Apache-2.0"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.12"
+ydata-profiling = "^4.6.0"
+matplotlib = "3.7.0"
+lxml = "^4.9.3"
+pandas = "1.4.x"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
