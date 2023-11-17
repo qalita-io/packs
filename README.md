@@ -1,2 +1,2 @@
-# packs
+# Packs
 Qalita Public Packs
