@@ -2,5 +2,6 @@ description: Pack profiling gives common profiling metrics
 icon: icon.png
 name: profiling
 type: completeness
-version: 1.0.0
+url: https://github.com/qalita-io/packs/tree/main/profiling_pack
+version: 1.0.7
 visibility: public

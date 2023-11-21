@@ -117,7 +117,7 @@ score = pd.DataFrame(
 
 alerts = tables[2]
 alerts.columns = ["content", "type"]
-alerts["scope"] = {"perimeter": "global"}
+alerts["type"] = "info"
 # Set the scope perimeter as 'column'
 alerts["scope"] = alerts["content"].str.split().str[0]
 

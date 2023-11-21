@@ -1,4 +1,5 @@
 #!/bin/sh
+echo "Running as user: $(whoami)"
 
 # Determine the appropriate command to use for python
 if command -v python3 > /dev/null 2>&1
@@ -19,8 +20,9 @@ PACK_NAME=$($PYTHON_CMD get_pack_name.py)
 if ! command -v poetry &> /dev/null
 then
     echo "Poetry could not be found, installing now..."
+    export POETRY_HOME="$HOME/.poetry"
     curl -sSL https://install.python-poetry.org | $PYTHON_CMD -
-    export PATH="/root/.local/bin:$PATH"
+    export PATH="$HOME/.poetry/bin:$PATH"
 fi
 
 # Attempt to install python3-venv if not present
@@ -31,9 +33,11 @@ if ! $PYTHON_CMD -m venv --help > /dev/null 2>&1; then
 fi
 
 # Check if virtual environment specific to the pack exists in the parent directory
-if [ ! -d "../../${PACK_NAME}_venv" ]; then
-    # If not, create it
-    $PYTHON_CMD -m venv ../../${PACK_NAME}_venv
+VENV_PATH="$HOME/${PACK_NAME}_venv"
+
+if [ ! -d "$VENV_PATH" ]; then
+    $PYTHON_CMD -m venv "$VENV_PATH"
+    # if not create it
     if [ $? -ne 0 ]; then
         echo "Failed to create virtual environment for $PACK_NAME."
         exit 1
@@ -41,7 +45,7 @@ if [ ! -d "../../${PACK_NAME}_venv" ]; then
 fi
 
 # Activate the virtual environment specific to the pack from the parent directory
-. ../../${PACK_NAME}_venv/bin/activate
+. "$VENV_PATH/bin/activate"
 
 # Install the requirements using poetry
 poetry install --no-root
