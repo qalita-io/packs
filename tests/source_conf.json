@@ -1,0 +1,14 @@
+{
+    "config": {
+        "path": "tests/data/iris.csv"
+    },
+    "description": "Iris Dataset",
+    "id": 1,
+    "name": "Iris Dataset",
+    "owner": "admin",
+    "owner_id": 1,
+    "reference": false,
+    "sensitive": false,
+    "type": "file",
+    "visibility": "internal"
+}
