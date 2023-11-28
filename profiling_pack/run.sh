@@ -33,7 +33,7 @@ if ! $PYTHON_CMD -m venv --help > /dev/null 2>&1; then
 fi
 
 # Check if virtual environment specific to the pack exists in the parent directory
-VENV_PATH="$HOME/${PACK_NAME}_venv"
+VENV_PATH="$HOME/.qalita/agent_run_temp/${PACK_NAME}_venv"
 
 if [ ! -d "$VENV_PATH" ]; then
     $PYTHON_CMD -m venv "$VENV_PATH"
