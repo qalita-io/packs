@@ -59,19 +59,21 @@ if config["type"] != "file":
 # Get the path from the config file
 path = config["config"]["path"]
 
-# Check if there are CSV files in the path
-print("Check csv files")
-csv_files = glob.glob(os.path.join(path, "*.csv"))
+# Check for CSV and XLSX files in the path
+print("Checking for data files")
+data_files = glob.glob(os.path.join(path, "*.csv")) + glob.glob(os.path.join(path, "*.xlsx"))
 
-if csv_files:
-    print("CSV files found:")
-    first_csv_file = csv_files[0]
-    print(f"Loading first CSV file: {first_csv_file}")
-    df = pd.read_csv(
-        first_csv_file, low_memory=False, memory_map=True, on_bad_lines="skip"
-    )
-else:
-    raise FileNotFoundError("No CSV files found in the provided path.")
+if not data_files:
+    raise FileNotFoundError("No CSV or XLSX files found in the provided path.")
+
+# Load the first data file (either CSV or XLSX)
+first_data_file = data_files[0]
+print(f"Loading first data file: {first_data_file}")
+
+if first_data_file.endswith('.csv'):
+    df = pd.read_csv(first_data_file, low_memory=False, memory_map=True, on_bad_lines="skip")
+elif first_data_file.endswith('.xlsx'):
+    df = pd.read_excel(first_data_file, engine='openpyxl')
 
 profile = ProfileReport(df, minimal=True, title="Profiling Report")
 profile.to_file("report.html")
