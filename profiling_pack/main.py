@@ -45,35 +45,45 @@ def denormalize(data):
             denormalized[index] = content
     return denormalized
 
+# Function to load data file
+def load_data_file(file_path):
+    if file_path.endswith('.csv'):
+        return pd.read_csv(file_path, low_memory=False, memory_map=True, on_bad_lines="skip")
+    elif file_path.endswith('.xlsx'):
+        return pd.read_excel(file_path, engine='openpyxl')
 
 # Load the configuration file
 print("Load source_conf.json")
 with open("source_conf.json", "r", encoding="utf-8") as file:
     config = json.load(file)
 
-# Check if data source is supported
-if config["type"] != "file":
-    print("Source Type not supported")
-    sys.exit(1)
-
 # Get the path from the config file
 path = config["config"]["path"]
 
-# Check for CSV and XLSX files in the path
-print("Checking for data files")
-data_files = glob.glob(os.path.join(path, "*.csv")) + glob.glob(os.path.join(path, "*.xlsx"))
+# Check if the path is a file or a folder
+if os.path.isfile(path):
+    # It's a file
+    if path.endswith('.csv') or path.endswith('.xlsx'):
+        print(f"Loading file: {path}")
+        df = load_data_file(path)
+    else:
+        raise ValueError("Unsupported file type. Only CSV and XLSX are supported.")
+elif os.path.isdir(path):
+    # It's a folder
+    print("Checking for data files in folder")
+    data_files = glob.glob(os.path.join(path, "*.csv")) + glob.glob(os.path.join(path, "*.xlsx"))
 
-if not data_files:
-    raise FileNotFoundError("No CSV or XLSX files found in the provided path.")
+    if not data_files:
+        raise FileNotFoundError("No CSV or XLSX files found in the provided path.")
 
-# Load the first data file (either CSV or XLSX)
-first_data_file = data_files[0]
-print(f"Loading first data file: {first_data_file}")
+    # Load the first data file
+    first_data_file = data_files[0]
+    print(f"Loading first data file: {first_data_file}")
+    df = load_data_file(first_data_file)
+else:
+    raise FileNotFoundError(f"The path {path} is neither a file nor a directory.")
 
-if first_data_file.endswith('.csv'):
-    df = pd.read_csv(first_data_file, low_memory=False, memory_map=True, on_bad_lines="skip")
-elif first_data_file.endswith('.xlsx'):
-    df = pd.read_excel(first_data_file, engine='openpyxl')
+# Run the profiling report
 
 profile = ProfileReport(df, minimal=True, title="Profiling Report")
 profile.to_file("report.html")
