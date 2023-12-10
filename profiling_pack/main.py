@@ -10,23 +10,25 @@ from opener import load_data
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+
 # Function to extract percentage and determine level
 def determine_level(content):
     """
     Function to extract percentage and determine level
     """
     # Find percentage value in the string
-    match = re.search(r'(\d+(\.\d+)?)%', content)
+    match = re.search(r"(\d+(\.\d+)?)%", content)
     if match:
         percentage = float(match.group(1))
         # Determine level based on percentage
         if 0 <= percentage <= 70:
-            return 'info'
+            return "info"
         elif 71 <= percentage <= 90:
-            return 'warning'
+            return "warning"
         elif 91 <= percentage <= 100:
-            return 'high'
-    return 'info'  # Default level if no percentage is found
+            return "high"
+    return "info"  # Default level if no percentage is found
+
 
 # Denormalize a dictionary with nested dictionaries
 def denormalize(data):
@@ -42,6 +44,7 @@ def denormalize(data):
         else:
             denormalized[index] = content
     return denormalized
+
 
 # Load the configuration file
 print("Load source_conf.json")
@@ -65,11 +68,13 @@ for col in df.columns:
     non_null_count = df[col].notnull().sum()
     total_count = len(df)
     completeness_score = non_null_count / total_count
-    completeness_scores.append({
-        "key": "completeness_score",
-        "value": str(completeness_score),
-        "scope": {"perimeter": "column", "value": col}
-    })
+    completeness_scores.append(
+        {
+            "key": "completeness_score",
+            "value": str(completeness_score),
+            "scope": {"perimeter": "column", "value": col},
+        }
+    )
 
 # Convert the completeness scores to DataFrame
 completeness_scores_df = pd.DataFrame(completeness_scores)
@@ -137,7 +142,7 @@ alerts["scope"] = alerts["content"].str.split().str[0]
 alerts["scope"] = alerts["scope"].apply(lambda x: {"perimeter": "column", "value": x})
 
 # Apply the function to the 'content' column of the alerts DataFrame
-alerts['level'] = alerts['content'].apply(determine_level)
+alerts["level"] = alerts["content"].apply(determine_level)
 
 ############################ Schemas
 
@@ -164,7 +169,10 @@ general_data_df = pd.DataFrame(general_data)
 variables_data_df = pd.DataFrame(variables_data)
 
 # Concatenate all the DataFrames
-metrics = pd.concat([general_data_df, variables_data_df, score, completeness_scores_df], ignore_index=True)
+metrics = pd.concat(
+    [general_data_df, variables_data_df, score, completeness_scores_df],
+    ignore_index=True,
+)
 
 # Convert the DataFrames to JSON strings
 metrics_json = metrics.to_json(orient="records")
