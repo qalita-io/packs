@@ -10,6 +10,18 @@ from opener import load_data
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+def round_if_numeric(value, decimals=2):
+    try:
+        # Convert to a float and round
+        rounded_value = round(float(value), decimals)
+        # If the rounded value is an integer, convert it to an int
+        if rounded_value.is_integer():
+            return str(int(rounded_value))
+        # Otherwise, format it as a string with two decimal places
+        return "{:.2f}".format(rounded_value)
+    except (ValueError, TypeError):
+        # Return the original value if it's not a number
+        return str(value)
 
 # Function to extract percentage and determine level
 def determine_level(content):
@@ -67,7 +79,7 @@ completeness_scores = []
 for col in df.columns:
     non_null_count = df[col].notnull().sum()
     total_count = len(df)
-    completeness_score = non_null_count / total_count
+    completeness_score = round(non_null_count / total_count, 2)
     completeness_scores.append(
         {
             "key": "completeness_score",
@@ -89,7 +101,7 @@ new_format_data = []
 for key, value in general_data.items():
     entry = {
         "key": key,
-        "value": str(value),
+        "value": round_if_numeric(value),
         "scope": {"perimeter": "dataset", "value": config["name"]},
     }
     new_format_data.append(entry)
@@ -101,7 +113,7 @@ for variable_name, attributes in variables_data.items():
     for attr_name, attr_value in attributes.items():
         entry = {
             "key": attr_name,
-            "value": str(attr_value),
+            "value": round_if_numeric(attr_value),
             "scope": {"perimeter": "column", "value": variable_name},
         }
         new_format_data.append(entry)
@@ -122,10 +134,10 @@ number_of_observations = int(
 score = pd.DataFrame(
     {
         "key": "score",
-        "value": str(
+        "value": str(round(
             (int(number_of_observations) - int(missing_cells))
-            / int(number_of_observations)
-        ),
+            / int(number_of_observations), 2
+        )),
         "scope": {"perimeter": "dataset", "value": config["name"]},
     },
     index=[0],

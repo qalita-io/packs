@@ -3,5 +3,5 @@ icon: icon.png
 name: profiling
 type: completeness
 url: https://github.com/qalita-io/packs/tree/main/profiling_pack
-version: 1.0.15
+version: 1.0.21
 visibility: public

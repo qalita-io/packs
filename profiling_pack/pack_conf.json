@@ -1,38 +1,53 @@
 {
-    "metrics_chart_mapping": [
-        {
-            "metric_key":"n_cells_missing",
-            "chart_type":"area_chart"
-        },
-        {
-            "metric_key":"n",
-            "chart_type":"area_chart"
-        },
-        {
-            "metric_key":"n_cells_missing",
-            "chart_type":"text_header"
-        },
-        {
-            "metric_key":"p_cells_missing",
-            "chart_type":"text_header"
-        }
-    ],
-    "schemas_chart_mapping": [
-        {
-            "metric_key":"n_missing",
-            "chart_type":"area_chart"
-        },
-        {
-            "metric_key":"min",
-            "chart_type":"text_header"
-        },
-        {
-            "metric_key":"max",
-            "chart_type":"text_header"
-        },
-        {
-            "metric_key":"skewness",
-            "chart_type":"text_header"
-        }
-    ]
+    "charts": {
+        "overview": [
+            {
+                "metric_key": "n_cells_missing",
+                "chart_type": "area_chart",
+                "display_title": true
+            },
+            {
+                "metric_key": "n",
+                "chart_type": "area_chart",
+                "display_title": true
+            },
+            {
+                "metric_key": "n_cells_missing",
+                "chart_type": "text",
+                "display_title": true,
+                "justify": true
+            },
+            {
+                "metric_key": "p_cells_missing",
+                "chart_type": "text",
+                "display_title": true,
+                "justify": true
+            },
+            {
+                "metric_key": "score",
+                "chart_type": "text",
+                "display_title": true,
+                "justify": true
+            }
+        ],
+        "scoped": [
+            {
+                "metric_key": "type",
+                "chart_type": "badge",
+                "display_title": true,
+                "justify": true
+            },
+            {
+                "metric_key": "completeness_score",
+                "chart_type": "text",
+                "display_title": true,
+                "justify": true
+            },
+            {
+                "metric_key": "completeness_score",
+                "chart_type": "spark_area_chart",
+                "display_title": false
+            }
+        ]
+    }
 }
