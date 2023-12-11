@@ -1,4 +1,7 @@
-# opener.py
+"""
+The opener module contains functions to load data from files and databases.
+"""
+
 import os
 import glob
 import pandas as pd
@@ -91,7 +94,7 @@ def load_data(config):
             return load_data_file(first_data_file)
         else:
             raise FileNotFoundError(
-                f"The path {path} is neither a file nor a directory."
+                f"The path {path} is neither a file nor a directory. Or can't be reached."
             )
 
     elif source_type == "database":
