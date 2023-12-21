@@ -10,6 +10,15 @@ from opener import load_data
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+# Function to extract variable name from the content
+def extract_variable_name(content):
+    # Regular expression pattern to extract variable name
+    pattern = r"^(.*?)\s+has"
+    match = re.search(pattern, content)
+    if match:
+        return match.group(1)  # Return the found variable name
+    return ""  # Return empty string if no match found
+
 def round_if_numeric(value, decimals=2):
     try:
         # Convert to a float and round
@@ -77,8 +86,8 @@ profile.to_file("report.json")
 # Calculate the completeness score for each column
 completeness_scores = []
 for col in df.columns:
-    non_null_count = df[col].notnull().sum()
-    total_count = len(df)
+    non_null_count = max(df[col].notnull().sum(), 0)  # Ensure non-negative
+    total_count = max(len(df), 1)  # Ensure non-zero and non-negative
     completeness_score = round(non_null_count / total_count, 2)
     completeness_scores.append(
         {
@@ -123,21 +132,21 @@ variables_data = new_format_data
 # Convert general_data to DataFrame
 general_data_df = pd.DataFrame(general_data)
 
-# Get missing_cells and number_of_observations
-missing_cells = int(
-    general_data_df[general_data_df["key"] == "n_cells_missing"]["value"].values[0]
-)
-number_of_observations = int(
-    general_data_df[general_data_df["key"] == "n"]["value"].values[0]
-)
+# Extract p_cells_missing value (as a decimal)
+p_cells_missing_value = general_data_df[general_data_df["key"] == "p_cells_missing"]["value"].values[0]
+p_cells_missing = float(p_cells_missing_value)
 
+# Calculate the score
+score_value = 1 - p_cells_missing
+
+# Ensure the score is within the range [0, 1]
+score_value = max(min(score_value, 1), 0)
+
+# Creating the DataFrame for the score
 score = pd.DataFrame(
     {
         "key": "score",
-        "value": str(round(
-            (int(number_of_observations) - int(missing_cells))
-            / int(number_of_observations), 2
-        )),
+        "value": str(round(score_value, 2)),
         "scope": {"perimeter": "dataset", "value": config["name"]},
     },
     index=[0],
@@ -147,11 +156,9 @@ score = pd.DataFrame(
 
 alerts = tables[2]
 alerts.columns = ["content", "type"]
-# Set the scope perimeter as 'column'
-alerts["scope"] = alerts["content"].str.split().str[0]
 
-# Convert the scope to JSON
-alerts["scope"] = alerts["scope"].apply(lambda x: {"perimeter": "column", "value": x})
+# Apply the extract_variable_name function to set the 'scope' column
+alerts["scope"] = alerts["content"].apply(lambda x: {"perimeter": "column", "value": extract_variable_name(x)})
 
 # Apply the function to the 'content' column of the alerts DataFrame
 alerts["level"] = alerts["content"].apply(determine_level)
