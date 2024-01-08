@@ -1,4 +1,9 @@
 {
+    "job": {
+        "source": {
+            "skiprows": 0
+        }
+    },
     "charts": {
         "overview": [
             {
