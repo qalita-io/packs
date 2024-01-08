@@ -36,20 +36,11 @@ if ! $PYTHON_CMD -m venv --help > /dev/null 2>&1; then
     sudo apt install python3-venv -y
 fi
 
-# Check if virtual environment specific to the pack exists in the parent directory
-VENV_PATH="$HOME/.qalita/agent_run_temp/${PACK_NAME}_venv"
+# Identify the Poetry environment path
+POETRY_VENV_PATH=$(poetry env info -p)
 
-if [ ! -d "$VENV_PATH" ]; then
-    $PYTHON_CMD -m venv "$VENV_PATH"
-    # if not create it
-    if [ $? -ne 0 ]; then
-        echo "Failed to create virtual environment for $PACK_NAME."
-        exit 1
-    fi
-fi
-
-# Activate the virtual environment specific to the pack from the parent directory
-. "$VENV_PATH/bin/activate"
+# Activate the Poetry virtual environment
+. "$POETRY_VENV_PATH/bin/activate"
 
 # Install the requirements using poetry
 poetry install --no-root
