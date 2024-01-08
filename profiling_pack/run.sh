@@ -17,8 +17,9 @@ fi
 
 # Extract pack name from properties.yaml using Python
 echo "Extracting pack name..."
-$PYTHON_CMD -m pip install pyyaml
-PACK_NAME=$($PYTHON_CMD get_pack_name.py)
+# $PYTHON_CMD -m pip install pyyaml
+# PACK_NAME=$($PYTHON_CMD get_pack_name.py)
+PACK_NAME=$(grep 'name:' properties.yaml | awk '{print $2}')
 if [ $? -ne 0 ]; then
     echo "Failed to extract pack name."
     exit 1
