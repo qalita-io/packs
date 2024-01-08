@@ -16,9 +16,9 @@ fi
 # Extract pack name from properties.yaml using Python
 PACK_NAME=$($PYTHON_CMD get_pack_name.py)
 
-POETRY_INSTALLER_MAX_WORKERS=10
-POETRY_CACHE_DIR="$HOME/.qalita/agent_run_temp/"
-POETRY_VIRTUALENVS_PATH="$HOME/.qalita/agent_run_temp/${PACK_NAME}_venv"
+export POETRY_INSTALLER_MAX_WORKERS=10
+export POETRY_CACHE_DIR="$HOME/.qalita/agent_run_temp/"
+export POETRY_VIRTUALENVS_PATH="$HOME/.qalita/agent_run_temp/${PACK_NAME}_venv"
 
 # Install poetry if it's not installed
 if ! command -v poetry > /dev/null
