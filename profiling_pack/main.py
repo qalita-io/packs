@@ -66,14 +66,18 @@ def denormalize(data):
             denormalized[index] = content
     return denormalized
 
-
 # Load the configuration file
 print("Load source_conf.json")
 with open("source_conf.json", "r", encoding="utf-8") as file:
-    config = json.load(file)
+    source_config = json.load(file)
+
+# Load the pack configuration file
+print("Load pack_conf.json")
+with open("pack_conf.json", "r", encoding="utf-8") as file:
+    pack_config = json.load(file)
 
 # Load data using the opener.py logic
-df = load_data(config)
+df = load_data(source_config, pack_config)
 
 # Run the profiling report
 profile = ProfileReport(df, minimal=True, title="Profiling Report")
@@ -111,7 +115,7 @@ for key, value in general_data.items():
     entry = {
         "key": key,
         "value": round_if_numeric(value),
-        "scope": {"perimeter": "dataset", "value": config["name"]},
+        "scope": {"perimeter": "dataset", "value": source_config["name"]},
     }
     new_format_data.append(entry)
 general_data = new_format_data
@@ -147,7 +151,7 @@ score = pd.DataFrame(
     {
         "key": "score",
         "value": str(round(score_value, 2)),
-        "scope": {"perimeter": "dataset", "value": config["name"]},
+        "scope": {"perimeter": "dataset", "value": source_config["name"]},
     },
     index=[0],
 )
@@ -169,8 +173,8 @@ alerts["level"] = alerts["content"].apply(determine_level)
 schemas_data = [
     {
         "key": "dataset",
-        "value": config["name"],
-        "scope": {"perimeter": "dataset", "value": config["name"]},
+        "value": source_config["name"],
+        "scope": {"perimeter": "dataset", "value": source_config["name"]},
     }
 ]
 

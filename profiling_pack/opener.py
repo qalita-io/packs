@@ -16,13 +16,32 @@ DEFAULT_PORTS = {
 
 
 # Function to load data file
-def load_data_file(file_path):
+def load_data_file(file_path, pack_config):
     if file_path.endswith(".csv"):
-        return pd.read_csv(
-            file_path, low_memory=False, memory_map=True, on_bad_lines="skip"
-        )
+
+        if pack_config["job"]["source"]["skiprows"]:
+            return pd.read_csv(
+                file_path,
+                low_memory=False,
+                memory_map=True,
+                skiprows=pack_config["job"]["source"]["skiprows"],
+                on_bad_lines="warn",
+            )
+        else:
+            return pd.read_csv(
+                file_path, low_memory=False, memory_map=True, on_bad_lines="warn"
+            )
+
     elif file_path.endswith(".xlsx"):
-        return pd.read_excel(file_path, engine="openpyxl")
+
+        if pack_config["job"]["source"]["skiprows"]:
+            return pd.read_excel(
+                file_path,
+                engine="openpyxl",
+                skiprows=pack_config["job"]["source"]["skiprows"],
+            )
+        else:
+            return pd.read_excel(file_path, engine="openpyxl")
 
 
 # Function to create database connection
@@ -69,15 +88,15 @@ def load_data_from_db(engine):
 
 
 # Function to load data based on the configuration
-def load_data(config):
-    source_type = config["type"]
+def load_data(source_config, pack_config):
+    source_type = source_config["type"]
 
     if source_type == "file":
-        path = config["config"]["path"]
+        path = source_config["config"]["path"]
 
         if os.path.isfile(path):
             if path.endswith(".csv") or path.endswith(".xlsx"):
-                return load_data_file(path)
+                return load_data_file(path, pack_config)
             else:
                 raise ValueError(
                     "Unsupported file type. Only CSV and XLSX are supported."
@@ -91,14 +110,14 @@ def load_data(config):
                     "No CSV or XLSX files found in the provided path."
                 )
             first_data_file = data_files[0]
-            return load_data_file(first_data_file)
+            return load_data_file(first_data_file, pack_config)
         else:
             raise FileNotFoundError(
                 f"The path {path} is neither a file nor a directory. Or can't be reached."
             )
 
     elif source_type == "database":
-        db_config = config["config"]
+        db_config = source_config["config"]
         engine = create_db_connection(db_config)
         return load_data_from_db(engine)
 
