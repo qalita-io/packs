@@ -36,6 +36,7 @@ fi
 
 # Check if virtual environment specific to the pack exists in the parent directory
 VENV_PATH="$HOME/.qalita/agent_run_temp/${PACK_NAME}_venv"
+POETRY_VIRTUALENVS_PATH="$HOME/.qalita/agent_run_temp/${PACK_NAME}_venv"
 
 if [ ! -d "$VENV_PATH" ]; then
     $PYTHON_CMD -m venv "$VENV_PATH"
