@@ -10,23 +10,46 @@ from opener import load_data
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+# Function to extract variable name from the content
+def extract_variable_name(content):
+    # Regular expression pattern to extract variable name
+    pattern = r"^(.*?)\s+has"
+    match = re.search(pattern, content)
+    if match:
+        return match.group(1)  # Return the found variable name
+    return ""  # Return empty string if no match found
+
+def round_if_numeric(value, decimals=2):
+    try:
+        # Convert to a float and round
+        rounded_value = round(float(value), decimals)
+        # If the rounded value is an integer, convert it to an int
+        if rounded_value.is_integer():
+            return str(int(rounded_value))
+        # Otherwise, format it as a string with two decimal places
+        return "{:.2f}".format(rounded_value)
+    except (ValueError, TypeError):
+        # Return the original value if it's not a number
+        return str(value)
+
 # Function to extract percentage and determine level
 def determine_level(content):
     """
     Function to extract percentage and determine level
     """
     # Find percentage value in the string
-    match = re.search(r'(\d+(\.\d+)?)%', content)
+    match = re.search(r"(\d+(\.\d+)?)%", content)
     if match:
         percentage = float(match.group(1))
         # Determine level based on percentage
         if 0 <= percentage <= 70:
-            return 'info'
+            return "info"
         elif 71 <= percentage <= 90:
-            return 'warning'
+            return "warning"
         elif 91 <= percentage <= 100:
-            return 'high'
-    return 'info'  # Default level if no percentage is found
+            return "high"
+    return "info"  # Default level if no percentage is found
+
 
 # Denormalize a dictionary with nested dictionaries
 def denormalize(data):
@@ -46,10 +69,15 @@ def denormalize(data):
 # Load the configuration file
 print("Load source_conf.json")
 with open("source_conf.json", "r", encoding="utf-8") as file:
-    config = json.load(file)
+    source_config = json.load(file)
+
+# Load the pack configuration file
+print("Load pack_conf.json")
+with open("pack_conf.json", "r", encoding="utf-8") as file:
+    pack_config = json.load(file)
 
 # Load data using the opener.py logic
-df = load_data(config)
+df = load_data(source_config, pack_config)
 
 # Run the profiling report
 profile = ProfileReport(df, minimal=True, title="Profiling Report")
@@ -62,14 +90,16 @@ profile.to_file("report.json")
 # Calculate the completeness score for each column
 completeness_scores = []
 for col in df.columns:
-    non_null_count = df[col].notnull().sum()
-    total_count = len(df)
-    completeness_score = non_null_count / total_count
-    completeness_scores.append({
-        "key": "completeness_score",
-        "value": str(completeness_score),
-        "scope": {"perimeter": "column", "value": col}
-    })
+    non_null_count = max(df[col].notnull().sum(), 0)  # Ensure non-negative
+    total_count = max(len(df), 1)  # Ensure non-zero and non-negative
+    completeness_score = round(non_null_count / total_count, 2)
+    completeness_scores.append(
+        {
+            "key": "completeness_score",
+            "value": str(completeness_score),
+            "scope": {"perimeter": "column", "value": col},
+        }
+    )
 
 # Convert the completeness scores to DataFrame
 completeness_scores_df = pd.DataFrame(completeness_scores)
@@ -84,8 +114,8 @@ new_format_data = []
 for key, value in general_data.items():
     entry = {
         "key": key,
-        "value": str(value),
-        "scope": {"perimeter": "dataset", "value": config["name"]},
+        "value": round_if_numeric(value),
+        "scope": {"perimeter": "dataset", "value": source_config["name"]},
     }
     new_format_data.append(entry)
 general_data = new_format_data
@@ -96,7 +126,7 @@ for variable_name, attributes in variables_data.items():
     for attr_name, attr_value in attributes.items():
         entry = {
             "key": attr_name,
-            "value": str(attr_value),
+            "value": round_if_numeric(attr_value),
             "scope": {"perimeter": "column", "value": variable_name},
         }
         new_format_data.append(entry)
@@ -106,22 +136,22 @@ variables_data = new_format_data
 # Convert general_data to DataFrame
 general_data_df = pd.DataFrame(general_data)
 
-# Get missing_cells and number_of_observations
-missing_cells = int(
-    general_data_df[general_data_df["key"] == "n_cells_missing"]["value"].values[0]
-)
-number_of_observations = int(
-    general_data_df[general_data_df["key"] == "n"]["value"].values[0]
-)
+# Extract p_cells_missing value (as a decimal)
+p_cells_missing_value = general_data_df[general_data_df["key"] == "p_cells_missing"]["value"].values[0]
+p_cells_missing = float(p_cells_missing_value)
 
+# Calculate the score
+score_value = 1 - p_cells_missing
+
+# Ensure the score is within the range [0, 1]
+score_value = max(min(score_value, 1), 0)
+
+# Creating the DataFrame for the score
 score = pd.DataFrame(
     {
         "key": "score",
-        "value": str(
-            (int(number_of_observations) - int(missing_cells))
-            / int(number_of_observations)
-        ),
-        "scope": {"perimeter": "dataset", "value": config["name"]},
+        "value": str(round(score_value, 2)),
+        "scope": {"perimeter": "dataset", "value": source_config["name"]},
     },
     index=[0],
 )
@@ -130,14 +160,12 @@ score = pd.DataFrame(
 
 alerts = tables[2]
 alerts.columns = ["content", "type"]
-# Set the scope perimeter as 'column'
-alerts["scope"] = alerts["content"].str.split().str[0]
 
-# Convert the scope to JSON
-alerts["scope"] = alerts["scope"].apply(lambda x: {"perimeter": "column", "value": x})
+# Apply the extract_variable_name function to set the 'scope' column
+alerts["scope"] = alerts["content"].apply(lambda x: {"perimeter": "column", "value": extract_variable_name(x)})
 
 # Apply the function to the 'content' column of the alerts DataFrame
-alerts['level'] = alerts['content'].apply(determine_level)
+alerts["level"] = alerts["content"].apply(determine_level)
 
 ############################ Schemas
 
@@ -145,8 +173,8 @@ alerts['level'] = alerts['content'].apply(determine_level)
 schemas_data = [
     {
         "key": "dataset",
-        "value": config["name"],
-        "scope": {"perimeter": "dataset", "value": config["name"]},
+        "value": source_config["name"],
+        "scope": {"perimeter": "dataset", "value": source_config["name"]},
     }
 ]
 
@@ -164,7 +192,10 @@ general_data_df = pd.DataFrame(general_data)
 variables_data_df = pd.DataFrame(variables_data)
 
 # Concatenate all the DataFrames
-metrics = pd.concat([general_data_df, variables_data_df, score, completeness_scores_df], ignore_index=True)
+metrics = pd.concat(
+    [general_data_df, variables_data_df, score, completeness_scores_df],
+    ignore_index=True,
+)
 
 # Convert the DataFrames to JSON strings
 metrics_json = metrics.to_json(orient="records")

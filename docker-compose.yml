@@ -1,0 +1,21 @@
+services:
+  agent:
+    container_name: qalita-agent
+    image: qalita/agent:latest
+    tty: true
+    environment:
+      - POETRY_INSTALLER_MAX_WORKER=10
+      - QALITA_AGENT_NAME=test-agent
+      - QALITA_AGENT_MODE=worker
+      - QALITA_AGENT_ENDPOINT=http://backend:3080/api/v1
+      - QALITA_AGENT_TOKEN=
+    volumes:
+      - ./:/app/agent
+      - /home/user/data:/home/user/data
+      - /home/user/.qalita:/root/.qalita
+    command: "agent run"
+    networks:
+      - frontend_default
+networks:
+  frontend_default:
+    external: true

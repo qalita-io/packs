@@ -7,12 +7,13 @@ license = "Apache-2.0"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.12"
+python = ">=3.9,<3.12"
 ydata-profiling = "^4.6.0"
 matplotlib = "3.7.0"
 lxml = "^4.9.3"
 pandas = "2.0.3"
 openpyxl = "^3.1.2"
+sqlalchemy = "^2.0.23"
 
 [build-system]
 requires = ["poetry-core"]

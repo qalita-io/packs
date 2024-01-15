@@ -4,48 +4,37 @@ This pack uses heavily [ydata Profiling](https://github.com/ydataai/ydata-profil
 
 ## Source type compabilitily
 
-### File
-
-| | File.csv | File.xslx |
-|---|---|---|
-| Status | ok | ok |
-
-### Relationnal
-
-| | Database.MySQL | Database.PostgreSQL | Database.Oracle |
-|---|---|---|---|
-| Status | planned | planned |  |
-
-### No-SQL
-
-| | Database.Elasticsearch | Database.MongoDB | Database.Cassandra | Database.Redis |
-|---|---|---|---|---|
-| Status |  |  |  |   |
-
-### Graph
-
-| | Graph.Neo4j |
-|---|---|
-| Status |  |
+| type                  | compatibility |
+| --------------------- | ------------- |
+| File : csv            | ok            |
+| File : xslx           | ok            |
+| Database : MySQL      | planned       |
+| Database : PostgreSQL | planned       |
 
 ## Input configuration
 
-| Name | Type | Required | Default | Description |
-|------|------|----------|---------|-------------|
-| `metrics_chart_mapping` | `array` | `false` | - | If you want to map a metric to a chart type in the source view. |
-| `metrics_chart_mapping[].metric_key` | `string` | `true` | - | The metric name. |
-| `metrics_chart_mapping[].chart_type` | `string` | `true` | - | The chart type. Currentlty supported chart types : area_chart, line_chart, text_header |
-| `schemas_chart_mapping` | `array` | `false` | - | If you want to map a metric to a minified chart type in the schema info view (at the top of your source). |
-| `schemas_chart_mapping[].metric_key` | `string` | `true` | - | The metric name. |
-| `schemas_chart_mapping[].chart_type` | `string` | `true` | - | The chart type. Currentlty supported chart types : area_chart, line_chart, text_header |
+| Name                   | Type    | Required | Default | Description                                              |
+| ---------------------- | ------- | -------- | ------- | -------------------------------------------------------- |
+| `jobs.source.skiprows` | `int`   | no       | `0`     | The number of rows to skip at the beginning of the file. |
+| `charts.overview`      | `array` | no       | `[]`    | The charts to display in the overview section.           |
+| `charts.scoped`        | `array` | no       | `[]`    | The charts to display in the scoped section.             |
+
+### Attributes configuration for charts
+
+| Name            | Type      | Required | Default | Description                                                                             |
+| --------------- | --------- | -------- | ------- | --------------------------------------------------------------------------------------- |
+| `metric_key`    | `string`  | yes      | -       | The metric key to display.                                                              |
+| `chart_type`    | `string`  | yes      | -       | The chart type to display. See                                                          |
+| `display_title` | `boolean` | no       | -       | The title to display on the chart                                                       |
+| `justify`       | `boolean` | no       | -       | If you want to the chart to be displayed aligned in justify mode next to others charts. |
 
 ## Output description
 
-| Name | Type | Description |
-|------|------|-------------|
-| `metrics` | `array` | The metrics computed by the profiling. |
+| Name              | Type    | Description                            |
+| ----------------- | ------- | -------------------------------------- |
+| `metrics`         | `array` | The metrics computed by the profiling. |
 | `recommendations` | `array` | The metrics computed by the profiling. |
-| `schemas` | `array` | The metrics computed by the profiling. |
+| `schemas`         | `array` | The metrics computed by the profiling. |
 
 # Contribute
 
