@@ -23,6 +23,7 @@ with open("pack_conf.json", "r", encoding="utf-8") as file:
 
 # Load data using the opener.py logic
 from opener import load_data
+
 df = load_data(source_config, pack_config)
 
 ########################### Profiling
@@ -85,7 +86,9 @@ variables_data = new_format_data
 general_data_df = pd.DataFrame(general_data)
 
 # Extract p_cells_missing value (as a decimal)
-p_cells_missing_value = general_data_df[general_data_df["key"] == "p_cells_missing"]["value"].values[0]
+p_cells_missing_value = general_data_df[general_data_df["key"] == "p_cells_missing"][
+    "value"
+].values[0]
 p_cells_missing = float(p_cells_missing_value)
 
 # Calculate the score
@@ -110,7 +113,9 @@ alerts = tables[2]
 alerts.columns = ["content", "type"]
 
 # Apply the extract_variable_name function to set the 'scope' column
-alerts["scope"] = alerts["content"].apply(lambda x: {"perimeter": "column", "value": utils.extract_variable_name(x)})
+alerts["scope"] = alerts["content"].apply(
+    lambda x: {"perimeter": "column", "value": utils.extract_variable_name(x)}
+)
 
 # Apply the function to the 'content' column of the alerts DataFrame
 alerts["level"] = alerts["content"].apply(utils.determine_level)

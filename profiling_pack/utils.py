@@ -1,6 +1,7 @@
 ### Contains general utility functions ###
 import re
 
+
 # Function to extract variable name from the content
 def extract_variable_name(content):
     # Regular expression pattern to extract variable name
@@ -9,6 +10,7 @@ def extract_variable_name(content):
     if match:
         return match.group(1)  # Return the found variable name
     return ""  # Return empty string if no match found
+
 
 def round_if_numeric(value, decimals=2):
     try:
@@ -22,6 +24,7 @@ def round_if_numeric(value, decimals=2):
     except (ValueError, TypeError):
         # Return the original value if it's not a number
         return str(value)
+
 
 # Function to extract percentage and determine level
 def determine_level(content):
@@ -56,4 +59,3 @@ def denormalize(data):
         else:
             denormalized[index] = content
     return denormalized
-
