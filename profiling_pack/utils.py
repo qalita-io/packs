@@ -1,55 +1,45 @@
-### Contains general utility functions ###
 import re
 
+# Constants for determine_level function
+INFO_THRESHOLD = 70
+WARNING_THRESHOLD = 90
+HIGH_THRESHOLD = 100
 
-# Function to extract variable name from the content
+
 def extract_variable_name(content):
     # Regular expression pattern to extract variable name
     pattern = r"^(.*?)\s+has"
     match = re.search(pattern, content)
-    if match:
-        return match.group(1)  # Return the found variable name
-    return ""  # Return empty string if no match found
+    return match.group(1) if match else ""
 
 
 def round_if_numeric(value, decimals=2):
     try:
         # Convert to a float and round
         rounded_value = round(float(value), decimals)
-        # If the rounded value is an integer, convert it to an int
-        if rounded_value.is_integer():
-            return str(int(rounded_value))
-        # Otherwise, format it as a string with two decimal places
-        return "{:.2f}".format(rounded_value)
+        # Format it as a string with the specified number of decimal places
+        return f"{rounded_value:.{decimals}f}".rstrip("0").rstrip(
+            "."
+        )  # Removes trailing zeros and dot if it's an integer
     except (ValueError, TypeError):
         # Return the original value if it's not a number
         return str(value)
 
 
-# Function to extract percentage and determine level
 def determine_level(content):
-    """
-    Function to extract percentage and determine level
-    """
-    # Find percentage value in the string
     match = re.search(r"(\d+(\.\d+)?)%", content)
     if match:
         percentage = float(match.group(1))
-        # Determine level based on percentage
-        if 0 <= percentage <= 70:
+        if percentage <= INFO_THRESHOLD:
             return "info"
-        elif 71 <= percentage <= 90:
+        elif percentage <= WARNING_THRESHOLD:
             return "warning"
-        elif 91 <= percentage <= 100:
+        elif percentage <= HIGH_THRESHOLD:
             return "high"
-    return "info"  # Default level if no percentage is found
+    return "info"
 
 
-# Denormalize a dictionary with nested dictionaries
 def denormalize(data):
-    """
-    Denormalize a dictionary with nested dictionaries
-    """
     denormalized = {}
     for index, content in data.items():
         if isinstance(content, dict):
