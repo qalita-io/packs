@@ -8,7 +8,7 @@ HIGH_THRESHOLD = 100
 
 def extract_variable_name(content):
     # Regular expression pattern to extract variable name
-    pattern = r"^(.*?)\s+has"
+    pattern = r"^(.*?)\s+(has|is)"
     match = re.search(pattern, content)
     return match.group(1) if match else ""
 
