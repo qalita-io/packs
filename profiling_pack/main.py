@@ -1,70 +1,15 @@
 """
 Main file for pack
 """
-import re
 import json
 import warnings
 import pandas as pd
 from ydata_profiling import ProfileReport
-from opener import load_data
+import utils
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-# Function to extract variable name from the content
-def extract_variable_name(content):
-    # Regular expression pattern to extract variable name
-    pattern = r"^(.*?)\s+has"
-    match = re.search(pattern, content)
-    if match:
-        return match.group(1)  # Return the found variable name
-    return ""  # Return empty string if no match found
-
-def round_if_numeric(value, decimals=2):
-    try:
-        # Convert to a float and round
-        rounded_value = round(float(value), decimals)
-        # If the rounded value is an integer, convert it to an int
-        if rounded_value.is_integer():
-            return str(int(rounded_value))
-        # Otherwise, format it as a string with two decimal places
-        return "{:.2f}".format(rounded_value)
-    except (ValueError, TypeError):
-        # Return the original value if it's not a number
-        return str(value)
-
-# Function to extract percentage and determine level
-def determine_level(content):
-    """
-    Function to extract percentage and determine level
-    """
-    # Find percentage value in the string
-    match = re.search(r"(\d+(\.\d+)?)%", content)
-    if match:
-        percentage = float(match.group(1))
-        # Determine level based on percentage
-        if 0 <= percentage <= 70:
-            return "info"
-        elif 71 <= percentage <= 90:
-            return "warning"
-        elif 91 <= percentage <= 100:
-            return "high"
-    return "info"  # Default level if no percentage is found
-
-
-# Denormalize a dictionary with nested dictionaries
-def denormalize(data):
-    """
-    Denormalize a dictionary with nested dictionaries
-    """
-    denormalized = {}
-    for index, content in data.items():
-        if isinstance(content, dict):
-            for inner_key, inner_value in content.items():
-                new_key = f"{index}_{inner_key.lower()}"
-                denormalized[new_key] = inner_value
-        else:
-            denormalized[index] = content
-    return denormalized
+########################### Loading Data
 
 # Load the configuration file
 print("Load source_conf.json")
@@ -77,140 +22,247 @@ with open("pack_conf.json", "r", encoding="utf-8") as file:
     pack_config = json.load(file)
 
 # Load data using the opener.py logic
-df = load_data(source_config, pack_config)
+from opener import load_data
 
-# Run the profiling report
-profile = ProfileReport(df, minimal=True, title="Profiling Report")
-profile.to_file("report.html")
-tables = pd.read_html("report.html")
-profile.to_file("report.json")
+df_dict = load_data(source_config, pack_config)
 
-############################ Metrics
+########################### Profiling and Aggregating Results
 
-# Calculate the completeness score for each column
-completeness_scores = []
-for col in df.columns:
-    non_null_count = max(df[col].notnull().sum(), 0)  # Ensure non-negative
-    total_count = max(len(df), 1)  # Ensure non-zero and non-negative
-    completeness_score = round(non_null_count / total_count, 2)
-    completeness_scores.append(
+# Initialize lists to store aggregated results
+aggregated_metrics = []
+aggregated_alerts = []
+aggregated_schemas = []
+
+# Ensure that data is loaded
+if not df_dict:
+    raise ValueError("No data loaded from the source.")
+
+# Iterate over each dataset and create profile reports
+for dataset_name, df in df_dict.items():
+
+    # Determine the appropriate name for 'dataset' in 'scope'
+    dataset_scope_name = (
+        dataset_name if source_config["type"] == "database" else source_config["name"]
+    )
+
+    print(f"Generating profile for {dataset_name}")
+
+    # Run the profiling report
+    profile = ProfileReport(
+        df, minimal=True, title=f"Profiling Report for {dataset_name}"
+    )
+
+    # Save the report to HTML
+    html_file_name = f"{dataset_name}_report.html"
+    profile.to_file(html_file_name)
+
+    # Save the report to JSON
+    json_file_name = f"{dataset_name}_report.json"
+    profile.to_file(json_file_name)
+
+    try:
+        with open(html_file_name, "r", encoding="utf-8") as f:
+            tables = pd.read_html(f.read())
+    except ValueError as e:
+        print(f"No tables found in the HTML report: {e}")
+        tables = [pd.DataFrame()]  # Create an empty DataFrame if no tables are found
+
+    ############################ Metrics
+
+    # Calculate the completeness score for each column
+    completeness_scores = []
+    for col in df.columns:
+        non_null_count = max(df[col].notnull().sum(), 0)  # Ensure non-negative
+        total_count = max(len(df), 1)  # Ensure non-zero and non-negative
+        completeness_score = round(non_null_count / total_count, 2)
+        completeness_scores.append(
+            {
+                "key": "completeness_score",
+                "value": str(completeness_score),
+                "scope": {"perimeter": "column", "value": col, "parent_scope": {"perimeter": "dataset", "value": dataset_scope_name}},
+            }
+        )
+
+
+    # Load the JSON file
+    print(f"Load {dataset_name}_report.json")
+    with open(f"{dataset_name}_report.json", "r", encoding="utf-8") as file:
+        report = json.load(file)
+
+    general_data = utils.denormalize(report["table"])
+    new_format_data = []
+    for key, value in general_data.items():
+        if source_config['type'] == 'database':
+            entry = {
+                "key": key,
+                "value": utils.round_if_numeric(value),
+                "scope": {"perimeter": "dataset", "value": dataset_scope_name, "parent_scope": {"perimeter": "database", "value": source_config["name"]}},
+            }
+        else:
+            entry = {
+                "key": key,
+                "value": utils.round_if_numeric(value),
+                "scope": {"perimeter": "dataset", "value": dataset_scope_name},
+            }
+        new_format_data.append(entry)
+    general_data = new_format_data
+
+    variables_data = report["variables"]
+    new_format_data = []
+    for variable_name, attributes in variables_data.items():
+        for attr_name, attr_value in attributes.items():
+            entry = {
+                "key": attr_name,
+                "value": utils.round_if_numeric(attr_value),
+                "scope": {"perimeter": "column", "value": variable_name, "parent_scope": {"perimeter": "dataset", "value": dataset_scope_name}},
+            }
+            new_format_data.append(entry)
+
+    variables_data = new_format_data
+
+    # Convert general_data to DataFrame
+    general_data_df = pd.DataFrame(general_data)
+
+    # Extract p_cells_missing value (as a decimal)
+    p_cells_missing_value = general_data_df[
+        general_data_df["key"] == "p_cells_missing"
+    ]["value"].values[0]
+    p_cells_missing = float(p_cells_missing_value)
+
+    # Calculate the score
+    score_value = 1 - p_cells_missing
+
+    # Ensure the score is within the range [0, 1]
+    score_value = max(min(score_value, 1), 0)
+
+    # Creating the DataFrame for the score
+    if source_config['type'] == 'database':
+        completeness_scores.append(
+            {
+                "key": "score",
+                "value": str(round(score_value, 2)),
+                "scope": {"perimeter": "dataset", "value": dataset_scope_name, "parent_scope": {"perimeter": "database", "value": source_config["name"]}},
+            }
+        )
+    else:
+        completeness_scores.append(
+            {
+                "key": "score",
+                "value": str(round(score_value, 2)),
+                "scope": {"perimeter": "dataset", "value": source_config["name"]},
+            }
+        )
+
+    # Convert the completeness scores to DataFrame
+    completeness_scores_df = pd.DataFrame(completeness_scores)
+
+    ############################ Recommendations
+    # Handle alerts
+    if len(tables) > 2:  # Check if the expected table exists
+        alerts_data = tables[
+            2
+        ]  # Adjust the index based on where the alerts are located
+        alerts_data.columns = ["content", "type"]
+        # Apply the extract_variable_name function to set the 'scope' column
+        alerts_data["scope"] = alerts_data["content"].apply(
+            lambda x: {"perimeter": "column", "value": utils.extract_variable_name(x), "parent_scope": {"perimeter": "dataset", "value": dataset_scope_name}}
+        )
+
+        # Apply the function to the 'content' column of the alerts DataFrame
+        alerts_data["level"] = alerts_data["content"].apply(utils.determine_level)
+    else:
+        print("No alerts table found in the HTML report.")
+        alerts_data = pd.DataFrame()  # Create an empty DataFrame if no alerts are found
+
+    ############################ Render
+    # Convert lists to DataFrames
+    general_data_df = pd.DataFrame(general_data)
+    variables_data_df = pd.DataFrame(variables_data)
+
+    # Concatenate all the DataFrames
+    metrics_data = pd.concat(
+        [general_data_df, variables_data_df, completeness_scores_df],
+        ignore_index=True,
+    )
+
+    ############################ Schemas
+    schemas_data = []
+
+    # Add entries for each variable
+    for variable_name in report["variables"].keys():
+        entry = {
+            "key": "column",
+            "value": variable_name,
+            "scope": {"perimeter": "column", "value": variable_name, "parent_scope": {"perimeter": "dataset", "value": dataset_scope_name}},
+        }
+        schemas_data.append(entry)
+
+    if source_config['type'] == 'database':
+        schemas_data.append(
+            {
+                "key": "dataset",
+                "value": dataset_scope_name,
+                "scope": {"perimeter": "dataset", "value": dataset_scope_name, "parent_scope": {"perimeter": "database", "value": source_config["name"]}}
+            }
+        )
+    else:
+        schemas_data.append(
+            {
+                "key": "dataset",
+                "value": dataset_scope_name,
+                "scope": {"perimeter": "dataset", "value": dataset_scope_name},
+            }
+        )
+
+    # Append data for the current table to the aggregated lists
+    aggregated_metrics.extend(metrics_data.to_dict("records"))
+    aggregated_alerts.extend(alerts_data.to_dict("records"))
+    aggregated_schemas.extend(schemas_data)
+
+############################ Writing Results to Files
+
+if source_config['type'] == 'database':
+    aggregated_schemas.append(
         {
-            "key": "completeness_score",
-            "value": str(completeness_score),
-            "scope": {"perimeter": "column", "value": col},
+            "key": "database",
+            "value": source_config["name"],
+            "scope": {"perimeter": "database", "value": source_config["name"]},
         }
     )
 
-# Convert the completeness scores to DataFrame
-completeness_scores_df = pd.DataFrame(completeness_scores)
+    # Compute the aggregated database level completeness score from the datasets score
+    aggregated_score = 0
+    for metric in aggregated_metrics:
+        if metric["key"] == "score":
+            aggregated_score += float(metric["value"])
+    aggregated_score /= len(df_dict)
 
-# Load the JSON file
-print("Load report.json")
-with open("report.json", "r", encoding="utf-8") as file:
-    report = json.load(file)
-
-general_data = denormalize(report["table"])
-new_format_data = []
-for key, value in general_data.items():
-    entry = {
-        "key": key,
-        "value": round_if_numeric(value),
-        "scope": {"perimeter": "dataset", "value": source_config["name"]},
-    }
-    new_format_data.append(entry)
-general_data = new_format_data
-
-variables_data = report["variables"]
-new_format_data = []
-for variable_name, attributes in variables_data.items():
-    for attr_name, attr_value in attributes.items():
-        entry = {
-            "key": attr_name,
-            "value": round_if_numeric(attr_value),
-            "scope": {"perimeter": "column", "value": variable_name},
+    aggregated_metrics.append(
+        {
+            "key": "score",
+            "value": str(round(aggregated_score, 2)),
+            "scope": {"perimeter": "database", "value": source_config["name"]},
         }
-        new_format_data.append(entry)
+    )
 
-variables_data = new_format_data
-
-# Convert general_data to DataFrame
-general_data_df = pd.DataFrame(general_data)
-
-# Extract p_cells_missing value (as a decimal)
-p_cells_missing_value = general_data_df[general_data_df["key"] == "p_cells_missing"]["value"].values[0]
-p_cells_missing = float(p_cells_missing_value)
-
-# Calculate the score
-score_value = 1 - p_cells_missing
-
-# Ensure the score is within the range [0, 1]
-score_value = max(min(score_value, 1), 0)
-
-# Creating the DataFrame for the score
-score = pd.DataFrame(
-    {
-        "key": "score",
-        "value": str(round(score_value, 2)),
-        "scope": {"perimeter": "dataset", "value": source_config["name"]},
-    },
-    index=[0],
-)
-
-############################ Recommendations
-
-alerts = tables[2]
-alerts.columns = ["content", "type"]
-
-# Apply the extract_variable_name function to set the 'scope' column
-alerts["scope"] = alerts["content"].apply(lambda x: {"perimeter": "column", "value": extract_variable_name(x)})
-
-# Apply the function to the 'content' column of the alerts DataFrame
-alerts["level"] = alerts["content"].apply(determine_level)
-
-############################ Schemas
-
-# Initialize the list with the dataset name entry
-schemas_data = [
-    {
-        "key": "dataset",
-        "value": source_config["name"],
-        "scope": {"perimeter": "dataset", "value": source_config["name"]},
-    }
-]
-
-# Add entries for each variable
-for variable_name in report["variables"].keys():
-    entry = {
-        "key": "column",
-        "value": variable_name,
-        "scope": {"perimeter": "column", "value": variable_name},
-    }
-    schemas_data.append(entry)
-
-# Convert lists to DataFrames
-general_data_df = pd.DataFrame(general_data)
-variables_data_df = pd.DataFrame(variables_data)
-
-# Concatenate all the DataFrames
-metrics = pd.concat(
-    [general_data_df, variables_data_df, score, completeness_scores_df],
-    ignore_index=True,
-)
+# Convert aggregated lists to DataFrames
+metrics_df = pd.DataFrame(aggregated_metrics)
+alerts_df = pd.DataFrame(aggregated_alerts)
+schemas_df = pd.DataFrame(aggregated_schemas)
 
 # Convert the DataFrames to JSON strings
-metrics_json = metrics.to_json(orient="records")
-alerts_json = alerts.to_json(orient="records")
+metrics_json = metrics_df.to_json(orient="records")
+alerts_json = alerts_df.to_json(orient="records")
+schemas_json = schemas_df.to_json(orient="records")
 
-# Load the JSON strings to Python objects
-metrics_data = json.loads(metrics_json)
-alerts_data = json.loads(alerts_json)
-
-# Write the Python objects to files in pretty format
+# Write the JSON strings to files
 with open("metrics.json", "w", encoding="utf-8") as f:
-    json.dump(metrics_data, f, indent=4)
+    json.dump(json.loads(metrics_json), f, indent=4)
 
 with open("recommendations.json", "w", encoding="utf-8") as f:
-    json.dump(alerts_data, f, indent=4)
+    json.dump(json.loads(alerts_json), f, indent=4)
 
 with open("schemas.json", "w", encoding="utf-8") as f:
-    json.dump(schemas_data, f, indent=4)
+    json.dump(json.loads(schemas_json), f, indent=4)
+
+print("Processing completed.")

@@ -1,0 +1,29 @@
+{
+    "charts": {
+        "overview": [
+            {
+                "metric_key": "types_numeric",
+                "chart_type": "text",
+                "display_title": true
+            },
+            {
+                "metric_key": "types_text",
+                "chart_type": "text",
+                "display_title": true
+            },
+            {
+                "metric_key": "n",
+                "chart_type": "area_chart",
+                "display_title": true
+            }
+        ],
+        "scoped": [
+            {
+                "metric_key": "type",
+                "chart_type": "badge",
+                "display_title": true,
+                "justify": true
+            }
+        ]
+    }
+}
