@@ -1,0 +1,6 @@
+description: Compute metrics when comparing data between two sources.
+icon: icon.png
+name: data_compare
+type: consistency
+version: 1.0.23
+visibility: public

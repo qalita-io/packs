@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "schema-scanner-pack"
+version = "1.0.0"
+description = "Scan schema for files"
+authors = ["qalita"]
+license = "Proprietary"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.12"
+ydata-profiling = "^4.6.0"
+matplotlib = "3.7.0"
+lxml = "^4.9.3"
+pandas = "2.0.3"
+openpyxl = "^3.1.2"
+sqlalchemy = "^2.0.23"
+html5lib = "^1.1"
+beautifulsoup4 = "^4.12.3"
+psycopg2-binary = "^2.9.9"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

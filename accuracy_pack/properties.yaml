@@ -1,0 +1,6 @@
+description: Compute accuracy metrics
+icon: icon.png
+name: accuracy
+type: accuracy
+version: 1.0.15
+visibility: public

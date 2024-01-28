@@ -1,0 +1,6 @@
+description: Check freshness from date columns
+icon: icon.png
+name: timeliness
+type: timeliness
+version: 1.0.18
+visibility: public

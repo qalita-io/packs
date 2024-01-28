@@ -1,0 +1,6 @@
+description: Automatic Outliers Detection using pyod
+icon: icon.png
+name: outlier_detection
+type: reasonability
+version: 1.0.26
+visibility: public

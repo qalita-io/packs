@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "outlier_detection-pack"
+version = "1.0.0"
+description = "outlier_detection pack"
+authors = ["qalita"]
+license = "Proprietary"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.12"
+matplotlib = "3.7.0"
+lxml = "^4.9.3"
+pandas = "2.0.3"
+openpyxl = "^3.1.2"
+sqlalchemy = "^2.0.23"
+pyod = "^1.1.2"
+numpy = "^1.26.3"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

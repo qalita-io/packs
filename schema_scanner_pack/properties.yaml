@@ -1,0 +1,6 @@
+description: Scan schema
+icon: icon.png
+name: schema_scanner
+type: schema
+version: 1.0.8
+visibility: public
