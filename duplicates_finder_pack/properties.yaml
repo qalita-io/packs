@@ -2,5 +2,6 @@ description: Compute duplication score
 icon: icon.png
 name: duplicates_finder
 type: uniqueness
-version: 1.0.14
+url: https://github.com/qalita-io/packs/tree/main/duplicates_finder_pack
+version: 1.1.0
 visibility: public

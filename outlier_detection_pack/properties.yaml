@@ -2,5 +2,6 @@ description: Automatic Outliers Detection using pyod
 icon: icon.png
 name: outlier_detection
 type: reasonability
-version: 1.0.26
+url: https://github.com/qalita-io/packs/tree/main/outlier_detection_pack
+version: 1.1.0
 visibility: public
