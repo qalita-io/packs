@@ -1,9 +1,9 @@
 [tool.poetry]
-name = "profiling-pack"
+name = "schema-scanner-pack"
 version = "1.0.0"
-description = "Pack profiling gives general information about the source"
+description = "Scan schema for files"
 authors = ["qalita"]
-license = "Apache-2.0"
+license = "Proprietary"
 readme = "README.md"
 
 [tool.poetry.dependencies]

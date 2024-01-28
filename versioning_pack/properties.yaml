@@ -1,0 +1,6 @@
+description: Determine the version and schema changes
+icon: icon.png
+name: versioning
+type: version
+version: 1.0.5
+visibility: public

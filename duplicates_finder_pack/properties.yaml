@@ -1,0 +1,6 @@
+description: Compute duplication score
+icon: icon.png
+name: duplicates_finder
+type: uniqueness
+version: 1.0.14
+visibility: public

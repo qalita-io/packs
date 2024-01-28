@@ -1,7 +1,7 @@
-description: Pack profiling gives common profiling metrics
+description: Gives common profiling metrics and completeness score
 icon: icon.png
 name: profiling
 type: completeness
 url: https://github.com/qalita-io/packs/tree/main/profiling_pack
-version: 1.0.52
+version: 1.0.77
 visibility: public

@@ -5,7 +5,7 @@ The opener module contains functions to load data from files and databases.
 import os
 import glob
 import pandas as pd
-from sqlalchemy import create_engine, text, inspect
+from sqlalchemy import create_engine
 
 # Mapping of default ports to database types
 DEFAULT_PORTS = {
@@ -14,6 +14,36 @@ DEFAULT_PORTS = {
     "1433": "mssql+pymssql",
 }
 
+def load_data_file(file_path, pack_config):
+    
+    # Check if the outer keys exist
+    if "job" in pack_config and "source" in pack_config["job"]:
+        # Now safely check for 'skiprows'
+        skiprows = pack_config["job"]["source"].get("skiprows")
+
+        if skiprows is not None:  # Checking if 'skiprows' exists and is not None
+            if file_path.endswith(".csv"):
+                return pd.read_csv(
+                    file_path,
+                    low_memory=False,
+                    memory_map=True,
+                    skiprows=int(skiprows),
+                    on_bad_lines="warn",
+                )
+            elif file_path.endswith(".xlsx"):
+                return pd.read_excel(
+                    file_path,
+                    engine="openpyxl",
+                    skiprows=int(skiprows),
+                )
+    else:
+        # Logic when 'skiprows' is not specified
+        if file_path.endswith(".csv"):
+            return pd.read_csv(
+                file_path, low_memory=False, memory_map=True, on_bad_lines="warn"
+            )
+        elif file_path.endswith(".xlsx"):
+            return pd.read_excel(file_path, engine="openpyxl")
 
 # Function to create database connection
 def create_db_connection(config):
@@ -41,59 +71,21 @@ def load_data_from_db(engine):
     with engine.connect() as connection:
         # Check liveness
         try:
-            connection.execute(text("SELECT 1"))  # Wrap the SQL string with text()
+            connection.execute("SELECT 1")
         except Exception as e:
             raise ConnectionError(f"Database connection failed: {e}")
 
-        # Create an inspector object
-        inspector = inspect(engine)
+        # Scan tables
+        tables = engine.table_names()
+        if not tables:
+            raise ValueError("No tables found in the database.")
 
-        # Scan datasets
-        datasets = inspector.get_table_names()
-        if not datasets:
-            raise ValueError("No datasets found in the database.")
-
-        # Load each dataset into a DataFrame and return them
+        # Load each table into a DataFrame and return them
         dataframes = {}
-        for dataset in datasets:
-            dataframes[dataset] = pd.read_sql_table(dataset, engine)
+        for table in tables:
+            dataframes[table] = pd.read_sql_table(table, engine)
 
         return dataframes
-
-
-def load_data_from_file(file_path, pack_config):
-    # Check if the outer keys exist
-    if "job" in pack_config and "source" in pack_config["job"]:
-        # Now safely check for 'skiprows'
-        skiprows = pack_config["job"]["source"].get("skiprows")
-
-        if skiprows is not None:  # Checking if 'skiprows' exists and is not None
-            if file_path.endswith(".csv"):
-                df = pd.read_csv(
-                    file_path,
-                    low_memory=False,
-                    memory_map=True,
-                    skiprows=int(skiprows),
-                    on_bad_lines="warn",
-                )
-            elif file_path.endswith(".xlsx"):
-                df = pd.read_excel(
-                    file_path,
-                    engine="openpyxl",
-                    skiprows=int(skiprows),
-                )
-    else:
-        # Logic when 'skiprows' is not specified
-        if file_path.endswith(".csv"):
-            df = pd.read_csv(
-                file_path, low_memory=False, memory_map=True, on_bad_lines="warn"
-            )
-        elif file_path.endswith(".xlsx"):
-            df = pd.read_excel(file_path, engine="openpyxl")
-
-    # Use the file name (without extension) as the dataset name in the returned dictionary
-    dataset_name = os.path.basename(file_path).split(".")[0]
-    return {dataset_name: df}
 
 
 # Function to load data based on the configuration
@@ -105,7 +97,7 @@ def load_data(source_config, pack_config):
 
         if os.path.isfile(path):
             if path.endswith(".csv") or path.endswith(".xlsx"):
-                return load_data_from_file(path, pack_config)
+                return load_data_file(path, pack_config)
             else:
                 raise ValueError(
                     "Unsupported file type. Only CSV and XLSX are supported."
@@ -119,7 +111,7 @@ def load_data(source_config, pack_config):
                     "No CSV or XLSX files found in the provided path."
                 )
             first_data_file = data_files[0]
-            return load_data_from_file(first_data_file, pack_config)
+            return load_data_file(first_data_file, pack_config)
         else:
             raise FileNotFoundError(
                 f"The path {path} is neither a file nor a directory. Or can't be reached."
