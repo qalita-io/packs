@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "data-compare-pack"
+version = "1.0.0"
+description = "Pack data-compare compare 2 sources"
+authors = ["qalita"]
+license = "Proprietary"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.12"
+matplotlib = "3.7.0"
+lxml = "^4.9.3"
+openpyxl = "^3.1.2"
+sqlalchemy = "^2.0.23"
+datacompy = "^0.10.5"
+pandas = "^2.0.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

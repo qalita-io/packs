@@ -1,0 +1,18 @@
+{
+    "charts": {
+        "overview": [
+            {
+                "metric_key": "current_version",
+                "chart_type": "text_header",
+                "display_title": true,
+                "justify": true
+            },
+            {
+                "metric_key": "computed_version",
+                "chart_type": "text_header",
+                "display_title": true,
+                "justify": true
+            }
+        ]
+    }
+}
