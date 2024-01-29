@@ -1,4 +1,7 @@
 {
+    "job": {
+        "compute_score_columns": [""]
+    },
     "charts": {
         "overview": [
             {
