@@ -5,6 +5,7 @@ services:
     tty: true
     environment:
       - POETRY_INSTALLER_MAX_WORKER=10
+      - POETRY_VIRTUALENVS_CREATE=false
       - QALITA_AGENT_NAME=test-agent
       - QALITA_AGENT_MODE=worker
       - QALITA_AGENT_ENDPOINT=http://backend:3080/api/v1
