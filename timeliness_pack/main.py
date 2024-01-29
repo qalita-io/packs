@@ -43,7 +43,7 @@ def is_date(string):
         r"^\d{4}\.\d{2}\.\d{2}$",  # yyyy.mm.dd
         r"^\d{2}\.\d{2}\.\d{4}$",  # dd.mm.yyyy
         r"^\d{2}\.\d{2}\.\d{4}$",  # mm.dd.yyyy
-        r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$"  # yyyy-mm-dd HH:MM:SS
+        r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$",  # yyyy-mm-dd HH:MM:SS
     ]
 
     # Convert the input to a string before checking
@@ -187,32 +187,30 @@ for column in df.columns:
 ############################ Compute Score Based on Average days_since_latest_date
 
 if date_columns_count > 0:
-    # Extract days_since_latest_date values from metrics_data
+    if "job" in pack_config and "compute_score_columns" in pack_config["job"]:
+        # Get the list of columns to be used for computing the score
+        compute_score_columns = pack_config["job"]["compute_score_columns"]
+    else:
+        # If the list of columns is not specified, use all date columns
+        compute_score_columns = df.columns
+
+    # Filter metrics_data to get only the days_since_latest_date for the columns to be used for computing the score
     days_since_latest_dates = [
         int(item["value"])
         for item in metrics_data
-        if item["key"] == "days_since_latest_date"
+        if item["key"] == "days_since_latest_date" and item["scope"]["value"] in compute_score_columns
     ]
 
-    # Calculate average days_since_latest_date
-    average_days_since_latest = (
-        sum(days_since_latest_dates) / len(days_since_latest_dates)
-        if days_since_latest_dates
-        else 0
-    )
+    if days_since_latest_dates:  # Only proceed if there are relevant columns
+        # Calculate average days_since_latest_date
+        average_days_since_latest = sum(days_since_latest_dates) / len(days_since_latest_dates)
 
-    # Compute score based on average_days_since_latest
-    # Score is 1.0 if average_days_since_latest is 0,
-    # and decreases linearly to 0.0 if average_days_since_latest is 365 or more
-    score = max(0.0, 1 - (average_days_since_latest / 365))
+        # Compute score based on average_days_since_latest
+        # Score is 1.0 if average_days_since_latest is 0,
+        # and decreases linearly to 0.0 if average_days_since_latest is 365 or more
+        score = max(0.0, 1 - (average_days_since_latest / 365))
 
-    # Update or Add 'score' metric to metrics_data
-    for metric in metrics_data:
-        if metric["key"] == "score":
-            metric["value"] = str(round(score, 2))
-            break
-    else:
-        # If there's no score metric yet, add it
+        # Add 'score' metric to metrics_data
         metrics_data.append(
             {
                 "key": "score",
@@ -220,6 +218,8 @@ if date_columns_count > 0:
                 "scope": {"perimeter": "dataset", "value": source_config["name"]},
             }
         )
+    else:
+        print(f"No relevant date columns found in the specified scope: {compute_score_columns}. Metric scores will not be computed.")
 else:
     print("No date columns found. Metric scores will not be computed.")
 
