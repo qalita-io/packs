@@ -2,6 +2,7 @@ import json
 import os
 import numpy as np
 import pandas as pd
+from datetime import datetime
 from sklearn.preprocessing import OneHotEncoder
 from pyod.models.knn import KNN
 
@@ -69,6 +70,13 @@ for column in df.columns:
         outliers = df[[column]][inlier_score < outlier_threshold]
         univariate_outliers[column] = outliers
 
+        outlier_count = len(outliers)
+        data.append({
+            "key": f"outliers",
+            "value": outlier_count,
+            "scope": {"perimeter": "column", "value": column},
+        })
+
 # Identify non-numeric columns
 non_numeric_columns = df.select_dtypes(exclude=[np.number]).columns
 
@@ -92,6 +100,12 @@ scores = clf.decision_function(df)
 
 # Identify multivariate outliers based on the inlier score and threshold
 multivariate_outliers = df[inlier_score < outlier_threshold]
+
+data.append({
+    "key": "outliers",
+    "value": len(multivariate_outliers),
+    "scope": {"perimeter": "dataset", "value": source_config["name"]},
+})
 
 inlier_score = (1 - scores / (scores.max() + epsilon))  # Normalize and convert to percentage
 
@@ -160,14 +174,42 @@ if recommendations:
     print("recommendations.json file created successfully.")
 
 ####################### Export
+    
+# Format the current date as YYYYMMDD
+current_date = datetime.now().strftime("%Y%m%d")
 
-# Save univariate outliers to file
+# Get the source name from the source_config
+source_name = source_config.get("name", "default_source")
+
+# Step 1: Compile Univariate Outliers
+id_columns = pack_config['job'].get("id_columns", [])
+all_univariate_outliers = pd.DataFrame()
+
 for column, outliers in univariate_outliers.items():
-    outliers_file_path = os.path.join(source_file_dir, f'univariate_outliers_{column}.csv')
-    outliers.to_csv(outliers_file_path, index=False)
-    print(f'Univariate outliers for column {column} saved to {outliers_file_path}')
+    outliers = outliers.reset_index()  # Reset index to ensure id_columns can be used
+    outliers['OutlierAttribute'] = column  # Add a column to specify which attribute is the outlier
+    all_univariate_outliers = pd.concat([all_univariate_outliers, outliers], ignore_index=True)
 
-# Save multivariate outliers to file
-multivariate_outliers_file_path = os.path.join(source_file_dir, 'multivariate_outliers.csv')
-multivariate_outliers.to_csv(multivariate_outliers_file_path, index=False)
-print(f'Multivariate outliers saved to {multivariate_outliers_file_path}')
+# Step 2: Compile Multivariate Outliers
+multivariate_outliers = multivariate_outliers.reset_index()  # Reset index to ensure id_columns can be used
+multivariate_outliers['OutlierAttribute'] = 'Multivariate'  # Specify that these are multivariate outliers
+
+# Step 3: Combine Data
+all_outliers = pd.concat([all_univariate_outliers, multivariate_outliers], ignore_index=True)
+
+# Ensure id_columns are at the front
+id_columns = [col for col in id_columns if col in all_outliers.columns]
+other_columns = [col for col in all_outliers.columns if col not in id_columns + ['OutlierAttribute']]
+all_outliers = all_outliers[id_columns + ['OutlierAttribute'] + other_columns]
+
+# Format the excel file path with source name and current date
+excel_file_name = f'outliers_report_{source_name}_{current_date}.xlsx'
+excel_file_path = os.path.join(source_file_dir, excel_file_name)
+
+# Use this path in the ExcelWriter
+with pd.ExcelWriter(excel_file_path, engine='xlsxwriter') as writer:
+    all_univariate_outliers.to_excel(writer, sheet_name='Univariate Outliers', index=False)
+    multivariate_outliers.to_excel(writer, sheet_name='Multivariate Outliers', index=False)
+    all_outliers.to_excel(writer, sheet_name='All Outliers', index=False)
+
+print(f'Outliers report saved to {excel_file_path}')
