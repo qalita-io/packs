@@ -32,7 +32,6 @@ else:
     # If the list of columns is not specified, use all date columns
     uniqueness_columns = df.columns
 
-recommendations = []
 
 ############################ Metrics
 
@@ -61,16 +60,6 @@ scoped_score = 1 - scoped_duplication_score
 # Use the scoped_score if the compute_uniqueness_columns is specified in the pack_config
 if "job" in pack_config and "compute_uniqueness_columns" in pack_config["job"]:
     score = scoped_score
-    # Add more details to the recommendation if the scoped_score is used
-    if score < 0.9:
-        uniqueness_columns_str = ", ".join(uniqueness_columns)
-        recommendation = {
-            "content": f"dataset '{source_config['name']}' has a high duplication rate of {scoped_duplication_score*100}% based on the subset of columns: {uniqueness_columns_str}. Consider reviewing these columns for data cleaning.",
-            "type": "Duplicates",
-            "scope": {"perimeter": "dataset", "value": source_config["name"]},
-            "level": utils.determine_recommendation_level(scoped_duplication_score)
-        }
-        recommendations.append(recommendation)
 else:
     score = inverted_duplication_score
 
@@ -106,12 +95,24 @@ if "job" in pack_config and "compute_uniqueness_columns" in pack_config["job"]:
 
 ############################ Recommendations
 
+recommendations = []
+
 if score < 0.9:
+
+    if "job" in pack_config and "compute_uniqueness_columns" in pack_config["job"]:
+        # If the list of columns is specified, use it
+        uniqueness_columns = pack_config["job"]["compute_uniqueness_columns"]
+        original_score = scoped_duplication_score
+    else:
+        # If the list of columns is not specified, use all date columns
+        original_score = original_duplication_score
+        uniqueness_columns = df.columns
+
     recommendation = {
-        "content": f"dataset '{source_config['name']}' has a duplication rate of {original_duplication_score*100}%. Consider reviewing for data cleaning.",
+        "content": f"dataset '{source_config['name']}' has a duplication rate of {original_score*100}%. on the scope {uniqueness_columns} .",
         "type": "Duplicates",
         "scope": {"perimeter": "dataset", "value": source_config["name"]},
-        "level": utils.determine_recommendation_level(original_duplication_score)
+        "level": utils.determine_recommendation_level(original_score)
     }
     recommendations.append(recommendation)
 
