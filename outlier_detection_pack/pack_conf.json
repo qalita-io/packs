@@ -2,7 +2,7 @@
     "job": {
         "normality_threshold": 0.90,
         "outlier_threshold": 0.5,
-        "id_col": [
+        "id_columns": [
         ]
     },
     "charts": {

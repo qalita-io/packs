@@ -1,47 +1,50 @@
 # Outlier Detection
 
-## Overview
-
 The Outlier Detection pack focuses on identifying and quantifying outliers within datasets, providing insights into the normality of data distributions. It utilizes the K-Nearest Neighbors (KNN) algorithm from the [PyOD library](https://pyod.readthedocs.io/) for outlier detection in both univariate (column-wise) and multivariate (dataset-wise) contexts.
 
-## Key Features
+![Outlier Detection](https://pyod.readthedocs.io/en/latest/_images/ALL.png)
 
-1. **Univariate Outlier Detection**: Examines each numeric column independently to detect outliers. It calculates a normality score indicating the proportion of inliers (data points that are not outliers) in each column.
+## Input 📥
 
-2. **Multivariate Outlier Detection**: Considers the entire dataset to detect outliers, providing a holistic view of data normality. It calculates a normality score for the entire dataset, giving a sense of overall data consistency.
+### Configuration ⚙️
 
-3. **Normality Scoring**: Offers a score between 0 and 100% for each column and for the entire dataset. A score of 100% indicates no detected outliers, signifying highly normal data.
+| Name                   | Type   | Required | Default | Description                                                                                                                      |
+| ---------------------- | ------ | -------- | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `jobs.source.skiprows` | `int`  | no       | `0`     | The number of rows to skip at the beginning of the file.                                                                         |
+| `normality_threshold`  | `int`  | no       | `0.9`   | The threshold for the normality score.  If there is a proportion of outliers bellow this threshold, it creates a recommendation. |
+| `id_columns`           | `list` | no       | `[]`    | The list of columns to be used as an identifier.                                                                                 |
+| `outlier_threshold`    | `int`  | no       | `0.5`   | The threshold for detecting outliers based on the inlier score `inlier_score = 1 - scores / (scores.max() + epsilon)`.           |
 
-4. **Actionable Recommendations**: Generates recommendations when a significant number of outliers are detected in a column or across the entire dataset. These recommendations are stratified into 'high', 'warning', and 'info' levels based on the severity of the detected outliers.
+### Source type compatibility 🧩
 
-## Workflow Steps
+This pack is compatible with **files** 📁 (``csv``, ``xslx``).
 
-1. **Load Configuration**: Reads configurations from `source_conf.json` and `pack_conf.json` files.
 
-2. **Data Loading**: Uses a custom data loader (defined in `opener.py`) to ingest the dataset into a Pandas DataFrame.
+## Analysis 🕵️‍♂️
 
-3. **Data Preprocessing**:
-   - Identifies and processes non-numeric columns.
-   - Applies one-hot encoding to non-numeric columns, preparing data for the KNN model.
+The pack assesses the data and computes the following metrics:
 
-4. **Outlier Detection Process**:
-   - Performs univariate outlier detection on each numeric column.
-   - Conducts multivariate outlier detection on the entire dataset.
-   - Calculates normality scores based on the KNN model's output.
+* **Univariate Outlier Detection**: Examines each numeric column independently to detect outliers. It calculates a normality score indicating the proportion of inliers (data points that are not outliers) in each column.
+* **Multivariate Outlier Detection**: Considers the entire dataset to detect outliers, providing a holistic view of data normality. It calculates a normality score for the entire dataset, giving a sense of overall data consistency.
+* **Normality Scoring**: Offers a score between 0 and 100% for each column and for the entire dataset. A score of 100% indicates no detected outliers, signifying highly normal data.
+* **Actionable Recommendations**: Generates recommendations when a significant number of outliers are detected in a column or across the entire dataset. These recommendations are stratified into 'high', 'warning', and 'info' levels based on the severity of the detected outliers.
 
-5. **Metrics and Recommendations Generation**:
-   - Produces `metrics.json` containing normality scores for columns and the dataset.
-   - Generates `recommendations.json` with suggestions based on the detected outliers.
+| Name                      | Description                                                 | Scope   | Type    |
+| ------------------------- | ----------------------------------------------------------- | ------- | ------- |
+| `normality_score_dataset` | The normality score for the entire dataset.                 | Dataset | `float` |
+| `score`                   | The aggregated average normality score for each column.     | Dataset | `float` |
+| `normality_score`         | The normality score for each column and the entire dataset. | Column  | `float` |
+| `outliers`                | The number of outliers detected in each column.             | Column  | `int`   |
 
-6. **Output Artifacts**:
-   - `metrics.json`: Includes normality scores for individual columns and the entire dataset.
-   - `recommendations.json`: Contains actionable recommendations based on outlier analysis.
+## Output 📤
 
-## Configuration Notes
+### Report 📊
 
-Ensure proper setup of `source_conf.json` and `pack_conf.json`, with special attention to the `outlier_threshold` parameter in `pack_conf.json` to tailor the sensitivity of outlier detection.
+The pack generates a report containing the following insights:
 
-# Contribute
+* **Univariate Outlier Detection**: A summary of the normality score for each numeric column, indicating the proportion of inliers in each column.
+* **Multivariate Outlier Detection**: A summary of the normality score for the entire dataset, indicating the proportion of inliers across the entire dataset.
 
-[This pack is part of Qalita Open Source Assets (QOSA) and is open to contribution. You can help us improve this pack by forking it and submitting a pull request here.](https://github.com/qalita-io/packs)
+# Contribute 💡
 
+[This pack is part of Qalita Open Source Assets (QOSA) and is open to contribution. You can help us improve this pack by forking it and submitting a pull request here.](https://github.com/qalita-io/packs) 👥🚀
