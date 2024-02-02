@@ -11,14 +11,13 @@ The Outlier Detection pack focuses on identifying and quantifying outliers withi
 | Name                   | Type   | Required | Default | Description                                                                                                                      |
 | ---------------------- | ------ | -------- | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `jobs.source.skiprows` | `int`  | no       | `0`     | The number of rows to skip at the beginning of the file.                                                                         |
-| `normality_threshold`  | `int`  | no       | `0.9`   | The threshold for the normality score.  If there is a proportion of outliers bellow this threshold, it creates a recommendation. |
-| `id_columns`           | `list` | no       | `[]`    | The list of columns to be used as an identifier.                                                                                 |
-| `outlier_threshold`    | `int`  | no       | `0.5`   | The threshold for detecting outliers based on the inlier score `inlier_score = 1 - scores / (scores.max() + epsilon)`.           |
+| `jobs.normality_threshold`  | `int`  | no       | `0.9`   | The threshold for the normality score.  If there is a proportion of outliers bellow this threshold, it creates a recommendation. |
+| `jobs.id_columns`           | `list` | no       | `[]`    | The list of columns to be used as an identifier.                                                                                 |
+| `jobs.outlier_threshold`    | `int`  | no       | `0.5`   | The threshold for detecting outliers based on the inlier score `inlier_score = 1 - scores / (scores.max() + epsilon)`.           |
 
 ### Source type compatibility 🧩
 
 This pack is compatible with **files** 📁 (``csv``, ``xslx``).
-
 
 ## Analysis 🕵️‍♂️
 
@@ -44,6 +43,8 @@ The pack generates a report containing the following insights:
 
 * **Univariate Outlier Detection**: A summary of the normality score for each numeric column, indicating the proportion of inliers in each column.
 * **Multivariate Outlier Detection**: A summary of the normality score for the entire dataset, indicating the proportion of inliers across the entire dataset.
+
+Filename is `outliers_report_{source_config["name"]}_{current_date}.xlsx`
 
 # Contribute 💡
 

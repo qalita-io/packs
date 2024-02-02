@@ -2,8 +2,10 @@
     "job": {
         "normality_threshold": 0.90,
         "outlier_threshold": 0.5,
-        "id_columns": [
-        ]
+        "id_columns": [],
+        "source": {
+            "skiprows": 0
+        }
     },
     "charts": {
         "overview": [

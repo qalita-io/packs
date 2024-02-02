@@ -5,6 +5,8 @@ import json
 import warnings
 import pandas as pd
 import utils
+import os
+from datetime import datetime
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -25,43 +27,27 @@ from opener import load_data
 
 df = load_data(source_config, pack_config)
 
+# Define uniqueness_columns if not specified in pack_config
 if "job" in pack_config and "compute_uniqueness_columns" in pack_config["job"]:
-    # Compute the uniqueness columns
     uniqueness_columns = pack_config["job"]["compute_uniqueness_columns"]
 else:
-    # If the list of columns is not specified, use all date columns
     uniqueness_columns = df.columns
-
 
 ############################ Metrics
 
-# Calculate the total number of duplicate rows in the dataset
-total_duplicates = df.duplicated().sum()
+# Step 1: Filter the DataFrame based on the specified columns
+print("Columns used for checking duplicates:", uniqueness_columns)
+df_subset = df[uniqueness_columns]
 total_rows = len(df)
 
-# Calculate the original duplication score
-original_duplication_score = round(total_duplicates / total_rows if total_rows > 0 else 0, 2)
-
-# Invert the score
-inverted_duplication_score = 1 - original_duplication_score
-
-# Step 1: Filter the DataFrame based on the specified columns
-df_subset = df[uniqueness_columns]
-
 # Step 2: Calculate the number of duplicate rows based on this subset
-total_duplicates_subset = df_subset.duplicated().sum()
+total_duplicates = df_subset.duplicated().sum()
 
 # Calculate the scoped duplication score
-scoped_duplication_score = round(total_duplicates_subset / total_rows if total_rows > 0 else 0, 2)
+duplication_score = round(total_duplicates / total_rows if total_rows > 0 else 0, 2)
 
 # Invert the score for the scoped scenario
-scoped_score = 1 - scoped_duplication_score
-
-# Use the scoped_score if the compute_uniqueness_columns is specified in the pack_config
-if "job" in pack_config and "compute_uniqueness_columns" in pack_config["job"]:
-    score = scoped_score
-else:
-    score = inverted_duplication_score
+score = 1 - duplication_score
 
 # Add the inverted duplication score to the metrics
 aggregated_score_entry = {
@@ -88,7 +74,7 @@ aggregated_score_df = pd.concat([aggregated_score_df, total_duplicates_df], igno
 if "job" in pack_config and "compute_uniqueness_columns" in pack_config["job"]:
     scoped_duplicates_df = pd.DataFrame([{
         "key": "duplicates",
-        "value": total_duplicates_subset,
+        "value": total_duplicates,
         "scope": {"perimeter": "dataset", "value": ", ".join(uniqueness_columns)},
     }])
     aggregated_score_df = pd.concat([aggregated_score_df, scoped_duplicates_df], ignore_index=True)
@@ -99,20 +85,11 @@ recommendations = []
 
 if score < 0.9:
 
-    if "job" in pack_config and "compute_uniqueness_columns" in pack_config["job"]:
-        # If the list of columns is specified, use it
-        uniqueness_columns = pack_config["job"]["compute_uniqueness_columns"]
-        original_score = scoped_duplication_score
-    else:
-        # If the list of columns is not specified, use all date columns
-        original_score = original_duplication_score
-        uniqueness_columns = df.columns
-
     recommendation = {
-        "content": f"dataset '{source_config['name']}' has a duplication rate of {original_score*100}%. on the scope {uniqueness_columns} .",
+        "content": f"dataset '{source_config['name']}' has a duplication rate of {duplication_score*100}%. on the scope {uniqueness_columns} .",
         "type": "Duplicates",
         "scope": {"perimeter": "dataset", "value": source_config["name"]},
-        "level": utils.determine_recommendation_level(original_score)
+        "level": utils.determine_recommendation_level(duplication_score)
     }
     recommendations.append(recommendation)
 
@@ -136,3 +113,45 @@ with open("metrics.json", "w", encoding="utf-8") as f:
 
 with open("recommendations.json", "w", encoding="utf-8") as f:
     json.dump(recommendations_data, f, indent=4)
+
+######################## Export:
+# Step 1: Retrieve 'id_columns' from pack_config
+id_columns = pack_config.get('job', {}).get('id_columns', [])
+
+# Check if uniqueness_columns is empty and handle accordingly
+if not uniqueness_columns:
+    print("No columns specified for checking duplicates. Using all columns.")
+    uniqueness_columns = df.columns.tolist()  # Use all columns if none are specified
+
+# Step 2: Identify duplicated rows
+duplicated_rows = df[df.duplicated(subset=uniqueness_columns, keep=False)]
+
+# Check if there are any duplicates
+if duplicated_rows.empty:
+    print("No duplicates found. No report will be generated.")
+else:
+    # If there are duplicates, proceed with sorting and exporting
+    duplicated_rows = duplicated_rows.sort_values(by=uniqueness_columns)
+
+    # Step 3: Set index or create 'index' column for the Excel export
+    if id_columns:
+        # Ensure all id_columns are in the DataFrame columns
+        valid_id_columns = [col for col in id_columns if col in duplicated_rows.columns]
+        if not valid_id_columns:
+            print("None of the specified 'id_columns' are in the DataFrame. Using default index.")
+            duplicated_rows = duplicated_rows.reset_index(drop=True)
+        else:
+            duplicated_rows = duplicated_rows.set_index(valid_id_columns)
+    else:
+        # If 'id_columns' is not provided or is empty, create an 'index' column with the original DataFrame's index
+        duplicated_rows = duplicated_rows.reset_index()
+
+    # Continue with the export process
+    if source_config['type'] == 'file':
+        source_file_dir = os.path.dirname(source_config['config']['path'])
+        current_date = datetime.now().strftime("%Y%m%d")
+        report_file_path = os.path.join(source_file_dir, f'duplicates_report_{source_config["name"]}_{current_date}.xlsx')
+
+        # Export duplicated rows to an Excel file
+        duplicated_rows.to_excel(report_file_path, index=False)  # Set index=False as 'original_index' is now a column
+        print(f"Duplicated rows have been exported to {report_file_path}")
