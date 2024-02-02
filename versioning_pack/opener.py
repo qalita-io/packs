@@ -14,8 +14,8 @@ DEFAULT_PORTS = {
     "1433": "mssql+pymssql",
 }
 
+
 def load_data_file(file_path, pack_config):
-    
     # Check if the outer keys exist
     if "job" in pack_config and "source" in pack_config["job"]:
         # Now safely check for 'skiprows'
@@ -29,6 +29,7 @@ def load_data_file(file_path, pack_config):
                     memory_map=True,
                     skiprows=int(skiprows),
                     on_bad_lines="warn",
+                    encoding="utf-8",
                 )
             elif file_path.endswith(".xlsx"):
                 return pd.read_excel(
@@ -40,10 +41,15 @@ def load_data_file(file_path, pack_config):
         # Logic when 'skiprows' is not specified
         if file_path.endswith(".csv"):
             return pd.read_csv(
-                file_path, low_memory=False, memory_map=True, on_bad_lines="warn"
+                file_path,
+                low_memory=False,
+                memory_map=True,
+                on_bad_lines="warn",
+                encoding="utf-8",
             )
         elif file_path.endswith(".xlsx"):
             return pd.read_excel(file_path, engine="openpyxl")
+
 
 # Function to create database connection
 def create_db_connection(config):
