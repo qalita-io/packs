@@ -19,8 +19,6 @@ from opener import load_data
 df = load_data(source_config, pack_config)
 
 ############################ Compute Precision Score for Each Float Column
-
-
 def compute_metrics(df):
     float_columns = df.select_dtypes(include=["float", "float64"]).columns
 
