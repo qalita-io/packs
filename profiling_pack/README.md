@@ -98,7 +98,6 @@ The pack assesses the data and computes the following metrics:
 
 ![Profiling Report](https://docs.profiling.ydata.ai/latest/_static/img/ydata-profiling.gif)
 
-
 The pack generates a report with the computed metrics and the following sections:
 
 - **Overview** 👁️ Get a high-level summary of the dataset, including key metrics and insights.

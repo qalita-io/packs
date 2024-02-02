@@ -182,7 +182,7 @@ for item in data:
         if item["value"] < normality_threshold:
             column_name = item["scope"]["value"]
             recommendation = {
-                "content": f"Column '{column_name}' has a normality score of {item['value']*100}%. Consider reviewing for outliers.",
+                "content": f"Column '{column_name}' has a normality score of {item['value']*100}%.",
                 "type": "Outliers",
                 "scope": {"perimeter": "column", "value": column_name},
                 "level": determine_recommendation_level(
@@ -201,7 +201,7 @@ if (
     and dataset_normality_score < normality_threshold
 ):
     recommendation = {
-        "content": f"The dataset '{source_config['name']}' has a normality score of {dataset_normality_score*100}%. Consider reviewing for outliers.",
+        "content": f"The dataset '{source_config['name']}' has a normality score of {dataset_normality_score*100}%.",
         "type": "Outliers",
         "scope": {"perimeter": "dataset", "value": source_config["name"]},
         "level": determine_recommendation_level(
