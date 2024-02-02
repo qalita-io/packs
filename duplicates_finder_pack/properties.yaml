@@ -3,5 +3,5 @@ icon: icon.png
 name: duplicates_finder
 type: uniqueness
 url: https://github.com/qalita-io/packs/tree/main/duplicates_finder_pack
-version: 1.1.6
+version: 1.1.16
 visibility: public
