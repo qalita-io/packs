@@ -4,8 +4,9 @@ Main file for pack
 import json
 import warnings
 import pandas as pd
-from ydata_profiling import ProfileReport
+import os
 import utils
+from ydata_profiling import ProfileReport
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -55,6 +56,16 @@ for dataset_name, df in df_dict.items():
     # Save the report to HTML
     html_file_name = f"{dataset_name}_report.html"
     profile.to_file(html_file_name)
+
+    if source_config['config']['type'] == 'file':
+
+        source_file_path = source_config['config']['path']
+        source_file_dir = os.path.dirname(source_file_path)
+        report_file_path = os.path.join(source_file_dir, f'report_{source_config["name"]}.csv')
+        report.to_csv(report_file_path, index=False)
+
+        profile.to_file(html_file_name)
+        print("Report exported.")
 
     # Save the report to JSON
     json_file_name = f"{dataset_name}_report.json"
