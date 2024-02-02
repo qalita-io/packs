@@ -25,6 +25,8 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.x'
+      - name: Update pip
+        run: pip install --upgrade pip
       - name: Install safety
         run: pip install poetry safety
       - name: Run safety check
