@@ -1,55 +1,40 @@
 # Duplicates Finder
 
-Duplicates finder searches for duplicates data and computes metrics.
-It only find duplicates for the whole columns,
+![Duplicates Finder](https://raw.githubusercontent.com/qalita-io/packs/dev/duplicates_finder_pack/duplicates_finder_banner.png)
 
-## Features
+Duplicates finder searches for duplicates data and computes metrics.
+
+## Input 📥
+
+### Configuration ⚙️
+
+| Name                              | Type   | Required | Default | Description                                              |
+| --------------------------------- | ------ | -------- | ------- | -------------------------------------------------------- |
+| `jobs.source.skiprows`            | `int`  | no       | `0`     | The number of rows to skip at the beginning of the file. |
+| `jobs.compute_uniqueness_columns` | `list` | no       | `[]`    | The list of columns to compute the uniqueness score.     |
+| `jobs.id_columns`                 | `list` | no       | `[]`    | The list of columns to use as identifier.                |
+
+### Source type compatibility 🧩
+
+This pack is compatible with **files** 📁 (``csv``, ``xslx``) and **databases** 🖥️ (``MySQL``, ``PostgreSQL``).
+
+## Analysis 🕵️‍♂️
 
 - **Duplication Score Calculation**: Calculates a duplication score based on the number of duplicate rows in a dataset, helping you understand the extent of data redundancy.
-- **Inversion of Duplication Score**: Transforms the duplication score to represent the uniqueness of the dataset, where a higher score indicates higher uniqueness.
-- **Recommendation Generation**: Provides actionable recommendations if the duplication rate exceeds a certain threshold, guiding you towards data cleaning and quality improvement.
 
-## Workflow
+| Name         | Description          | Scope   | Type    |
+| ------------ | -------------------- | ------- | ------- |
+| `score`      | Duplication score    | Dataset | `float` |
+| `duplicates` | Number of duplicates | Dataset | `int`   |
 
-1. **Configuration Loading**: The pack starts by loading configuration details from `source_conf.json` and `pack_conf.json`, which contain source and pack-related configurations, respectively.
-2. **Data Loading**: Utilizes `opener.py` to load the dataset as per the configurations.
-3. **Duplication Analysis**:
-    - Calculates the total number of duplicate rows in the dataset.
-    - Computes the original duplication score and its inverted counterpart to reflect data uniqueness.
-4. **Recommendation Provision**: Generates recommendations if the inverted duplication score is below the threshold (0.9 by default), suggesting a review of the dataset for data cleaning.
-5. **Result Storage**: Stores the calculated metrics and recommendations in `metrics.json` and `recommendations.json`, respectively, providing an easy way to access and review the results.
+## Output 📤
 
-## Source type compabilitily
+### Report 📊
 
-| type                  | compatibility |
-| --------------------- | ------------- |
-| File : csv            | ok            |
-| File : xslx           | ok            |
-| Database : MySQL      | planned       |
-| Database : PostgreSQL | planned       |
+The report exports the duplicated data by adding the id column, and groupy by duplicates and sorting them.
 
-## Input configuration
+Filename is `duplicates_report_{source_config["name"]}_{current_date}.xlsx`
 
-| Name              | Type    | Required | Default | Description                                    |
-| ----------------- | ------- | -------- | ------- | ---------------------------------------------- |
-| `charts.overview` | `array` | no       | `[]`    | The charts to display in the overview section. |
-| `charts.scoped`   | `array` | no       | `[]`    | The charts to display in the scoped section.   |
+# Contribute 💡
 
-### Attributes configuration for charts
-
-| Name            | Type      | Required | Default | Description                                                                             |
-| --------------- | --------- | -------- | ------- | --------------------------------------------------------------------------------------- |
-| `metric_key`    | `string`  | yes      | -       | The metric key to display.                                                              |
-| `chart_type`    | `string`  | yes      | -       | The chart type to display. See                                                          |
-| `display_title` | `boolean` | no       | -       | The title to display on the chart                                                       |
-| `justify`       | `boolean` | no       | -       | If you want to the chart to be displayed aligned in justify mode next to others charts. |
-
-## Output description
-
-| Name              | Type    | Description                            |
-| ----------------- | ------- | -------------------------------------- |
-| `metrics`         | `array` | The metrics computed by the profiling. |
-| `recommendations` | `array` | The metrics computed by the profiling. |
-| `schemas`         | `array` | The metrics computed by the profiling. |
-
-
+[This pack is part of Qalita Open Source Assets (QOSA) and is open to contribution. You can help us improve this pack by forking it and submitting a pull request here.](https://github.com/qalita-io/packs) 👥🚀

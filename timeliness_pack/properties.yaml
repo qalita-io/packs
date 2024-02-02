@@ -2,5 +2,6 @@ description: Check freshness from date columns
 icon: icon.png
 name: timeliness
 type: timeliness
-version: 1.0.18
+url: https://github.com/qalita-io/packs/tree/main/timeliness_pack
+version: 1.1.4
 visibility: public

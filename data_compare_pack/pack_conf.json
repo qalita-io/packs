@@ -1,8 +1,9 @@
 {
     "job": {
-        "col_list" : [
-
-        ]
+        "col_list": [],
+        "source": {
+            "skiprows": 0
+        }
     },
     "charts": {
         "overview": [

@@ -2,5 +2,6 @@ description: Scan schema
 icon: icon.png
 name: schema_scanner
 type: schema
-version: 1.0.8
+url: https://github.com/qalita-io/packs/tree/main/schema_scanner_pack
+version: 1.1.0
 visibility: public

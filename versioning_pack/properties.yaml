@@ -2,5 +2,6 @@ description: Determine the version and schema changes
 icon: icon.png
 name: versioning
 type: version
-version: 1.0.5
+url: https://github.com/qalita-io/packs/tree/main/versioning_pack
+version: 1.1.0
 visibility: public

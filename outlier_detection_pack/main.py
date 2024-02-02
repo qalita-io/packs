@@ -2,6 +2,7 @@ import json
 import os
 import numpy as np
 import pandas as pd
+from datetime import datetime
 from sklearn.preprocessing import OneHotEncoder
 from pyod.models.knn import KNN
 
@@ -9,10 +10,6 @@ from pyod.models.knn import KNN
 print("Load source_conf.json")
 with open("source_conf.json", "r", encoding="utf-8") as file:
     source_config = json.load(file)
-
-source_file_path = source_config['config']['path']
-source_file_dir = os.path.dirname(source_file_path)
-
 # Load the pack configuration file
 print("Load pack_conf.json")
 with open("pack_conf.json", "r", encoding="utf-8") as file:
@@ -36,19 +33,22 @@ df.drop(columns=columns_with_nan, inplace=True)
 
 # Check if there are any NaN values left in the dataframe (optional, for sanity check)
 if df.isnull().values.any():
-    raise ValueError("Unexpected NaN values are still present in the dataframe after filling and dropping.")
+    raise ValueError(
+        "Unexpected NaN values are still present in the dataframe after filling and dropping."
+    )
 
 ############################ Metrics
 # Data to be written to JSON
 data = []
 epsilon = 1e-7  # Small number to prevent division by zero
-outlier_threshold = pack_config['job'].get("outlier_threshold", 0.5)
+outlier_threshold = pack_config["job"].get("outlier_threshold", 0.5)
+id_columns = pack_config["job"].get("id_columns", [])
 
 # Dictionary to store univariate outliers for each column
 univariate_outliers = {}
 
-# Univariate Outlier Detection
-for column in df.columns:
+# Exclude id_columns from Univariate Outlier Detection
+for column in [col for col in df.columns if col not in id_columns]:
     if np.issubdtype(df[column].dtype, np.number):  # Process only numeric columns
         clf = KNN()
         clf.fit(df[[column]])  # Fit model to the column
@@ -57,54 +57,95 @@ for column in df.columns:
         scores = clf.decision_function(df[[column]])
 
         # Calculate the inlier score (100 - outlier score)
-        inlier_score = (1 - scores / (scores.max() + epsilon)) # Normalize and convert to percentage
+        inlier_score = 1 - scores / (
+            scores.max() + epsilon
+        )  # Normalize and convert to percentage
 
-        data.append({
-            "key": f"normality_score",
-            "value": round(inlier_score.mean().item(),2),  # Get the average score for the column
-            "scope": {"perimeter": "column", "value": column},
-        })
+        data.append(
+            {
+                "key": f"normality_score",
+                "value": round(
+                    inlier_score.mean().item(), 2
+                ),  # Get the average score for the column
+                "scope": {"perimeter": "column", "value": column},
+            }
+        )
 
         # Identify outliers based on the inlier score and threshold
         outliers = df[[column]][inlier_score < outlier_threshold]
         univariate_outliers[column] = outliers
 
+        outlier_count = len(outliers)
+        data.append(
+            {
+                "key": f"outliers",
+                "value": outlier_count,
+                "scope": {"perimeter": "column", "value": column},
+            }
+        )
+
 # Identify non-numeric columns
 non_numeric_columns = df.select_dtypes(exclude=[np.number]).columns
 
 # Apply OneHotEncoder
-encoder = OneHotEncoder(drop='if_binary')
+encoder = OneHotEncoder(drop="if_binary")
 encoded_data = encoder.fit_transform(df[non_numeric_columns])
 
 # If you want a dense array, use .toarray()
-encoded_df = pd.DataFrame(encoded_data.toarray(), columns=encoder.get_feature_names_out())
+encoded_df = pd.DataFrame(
+    encoded_data.toarray(), columns=encoder.get_feature_names_out()
+)
 
 # Drop non-numeric columns from original df and concatenate with encoded_df
 df = df.drop(non_numeric_columns, axis=1)
 df = pd.concat([df, encoded_df.reset_index(drop=True)], axis=1)
 
+# Exclude id_columns from df before Multivariate Outlier Detection
+df_for_multivariate = df.drop(columns=id_columns)
+
 # Multivariate Outlier Detection
-clf = KNN()
-clf.fit(df)  # Fit model to the entire dataset
+multivariate_outliers = pd.DataFrame()
+try:
+    clf = KNN()
+    clf.fit(df_for_multivariate)  # Fit model to the dataset excluding id_columns
 
-# Get the outlier scores
-scores = clf.decision_function(df)
+    # Get the outlier scores
+    scores = clf.decision_function(df_for_multivariate)
 
-# Identify multivariate outliers based on the inlier score and threshold
-multivariate_outliers = df[inlier_score < outlier_threshold]
+    inlier_score = 1 - scores / (
+        scores.max() + epsilon
+    )  # Normalize and convert to percentage
 
-inlier_score = (1 - scores / (scores.max() + epsilon))  # Normalize and convert to percentage
+    # Identify multivariate outliers based on the inlier score and threshold
+    multivariate_outliers = df.loc[inlier_score < outlier_threshold].copy()
 
-data.append({
-    "key": "normality_score_dataset",
-    "value": round(inlier_score.mean().item(),2),
-    "scope": {"perimeter": "dataset", "value": source_config["name"]},
-})
-data.append({
-    "key": "score",
-    "value": round(inlier_score.mean().item(),2),
-    "scope": {"perimeter": "dataset", "value": source_config["name"]},
-})
+    data.append(
+        {
+            "key": "outliers",
+            "value": len(multivariate_outliers),
+            "scope": {"perimeter": "dataset", "value": source_config["name"]},
+        }
+    )
+    data.append(
+        {
+            "key": "normality_score_dataset",
+            "value": round(inlier_score.mean().item(), 2),
+            "scope": {"perimeter": "dataset", "value": source_config["name"]},
+        }
+    )
+    data.append(
+        {
+            "key": "score",
+            "value": round(inlier_score.mean().item(), 2),
+            "scope": {"perimeter": "dataset", "value": source_config["name"]},
+        }
+    )
+
+except ValueError as e:
+    print(f"Error: {e}")
+    raise ValueError(
+        "Multivariate outlier detection failed. Maybe you don't have enough data or variables, Please check your data and try again."
+    )
 
 # Writing data to metrics.json
 with open("metrics.json", "w") as file:
@@ -113,7 +154,10 @@ with open("metrics.json", "w") as file:
 print("metrics.json file created successfully.")
 
 # Define a threshold for considering a data point as an outlier
-normality_threshold = pack_config['job']["normality_threshold"]  # Ensure this exists in your pack_conf.json
+normality_threshold = pack_config["job"][
+    "normality_threshold"
+]  # Ensure this exists in your pack_conf.json
+
 
 # Define a function to determine recommendation level based on the proportion of outliers
 def determine_recommendation_level(proportion_outliers):
@@ -124,32 +168,45 @@ def determine_recommendation_level(proportion_outliers):
     else:
         return "info"
 
+
 # Generate recommendations if the number of outliers is significant
 recommendations = []
 
 # Univariate Outlier Recommendations
 for item in data:
-    if item['key'].startswith('normality_score') and 'column' in item['scope']['perimeter']:
+    if (
+        item["key"].startswith("normality_score")
+        and "column" in item["scope"]["perimeter"]
+    ):
         # Check if the normality score is below the threshold
-        if item['value'] < normality_threshold:
-            column_name = item['scope']['value']
+        if item["value"] < normality_threshold:
+            column_name = item["scope"]["value"]
             recommendation = {
                 "content": f"Column '{column_name}' has a normality score of {item['value']*100}%. Consider reviewing for outliers.",
                 "type": "Outliers",
                 "scope": {"perimeter": "column", "value": column_name},
-                "level": determine_recommendation_level(1 - item['value']),  # Convert percentage to proportion
+                "level": determine_recommendation_level(
+                    1 - item["value"]
+                ),  # Convert percentage to proportion
             }
             recommendations.append(recommendation)
 
 # Multivariate Outlier Recommendation
 # Assuming 'normality_score_dataset' is the key for the dataset's normality score
-dataset_normality_score = next((item['value'] for item in data if item['key'] == 'normality_score_dataset'), None)
-if dataset_normality_score is not None and dataset_normality_score < normality_threshold:
+dataset_normality_score = next(
+    (item["value"] for item in data if item["key"] == "normality_score_dataset"), None
+)
+if (
+    dataset_normality_score is not None
+    and dataset_normality_score < normality_threshold
+):
     recommendation = {
         "content": f"The dataset '{source_config['name']}' has a normality score of {dataset_normality_score*100}%. Consider reviewing for outliers.",
         "type": "Outliers",
         "scope": {"perimeter": "dataset", "value": source_config["name"]},
-        "level": determine_recommendation_level(1 - dataset_normality_score),  # Convert percentage to proportion
+        "level": determine_recommendation_level(
+            1 - dataset_normality_score
+        ),  # Convert percentage to proportion
     }
     recommendations.append(recommendation)
 
@@ -161,13 +218,73 @@ if recommendations:
 
 ####################### Export
 
-# Save univariate outliers to file
+# Step 1: Compile Univariate Outliers
+all_univariate_outliers = pd.DataFrame()
 for column, outliers in univariate_outliers.items():
-    outliers_file_path = os.path.join(source_file_dir, f'univariate_outliers_{column}.csv')
-    outliers.to_csv(outliers_file_path, index=False)
-    print(f'Univariate outliers for column {column} saved to {outliers_file_path}')
+    outliers_with_id = df.loc[outliers.index, id_columns + [column]].copy()
+    outliers_with_id["OutlierAttribute"] = column
+    outliers_with_id["index"] = outliers_with_id.index  # Capture the original index
+    all_univariate_outliers = pd.concat(
+        [all_univariate_outliers, outliers_with_id], ignore_index=True
+    )
 
-# Save multivariate outliers to file
-multivariate_outliers_file_path = os.path.join(source_file_dir, 'multivariate_outliers.csv')
-multivariate_outliers.to_csv(multivariate_outliers_file_path, index=False)
-print(f'Multivariate outliers saved to {multivariate_outliers_file_path}')
+# Rearrange columns for all_univariate_outliers
+id_and_other_columns = (
+    ["index"]
+    + id_columns
+    + ["OutlierAttribute"]
+    + [
+        col
+        for col in all_univariate_outliers.columns
+        if col not in ["index"] + id_columns + ["OutlierAttribute"]
+    ]
+)
+all_univariate_outliers = all_univariate_outliers[id_and_other_columns]
+
+# Step 2: Compile Multivariate Outliers
+multivariate_outliers[
+    "index"
+] = multivariate_outliers.index  # Capture the original index
+multivariate_outliers["OutlierAttribute"] = "Multivariate"
+multivariate_outliers.reset_index(drop=True, inplace=True)
+
+# Rearrange columns for multivariate_outliers
+id_and_other_columns = (
+    ["index"]
+    + id_columns
+    + ["OutlierAttribute"]
+    + [
+        col
+        for col in multivariate_outliers.columns
+        if col not in ["index"] + id_columns + ["OutlierAttribute"]
+    ]
+)
+multivariate_outliers = multivariate_outliers[id_and_other_columns]
+
+# Step 3: Combine Data
+all_outliers = pd.concat(
+    [all_univariate_outliers, multivariate_outliers], ignore_index=True
+)
+
+# Ensure that all_outliers has the same column order
+all_outliers = all_outliers[id_and_other_columns]
+
+# Step 4: Save to Excel
+# Format the excel file path with source name and current date
+if source_config['type'] == 'file':
+    source_file_dir = os.path.dirname(source_config["config"]["path"])
+    current_date = datetime.now().strftime("%Y%m%d")
+    excel_file_name = f"outliers_report_{source_config['name']}_{current_date}.xlsx"
+    excel_file_path = os.path.join(source_file_dir, excel_file_name)
+
+    # Use this path in the ExcelWriter
+    with pd.ExcelWriter(excel_file_path, engine="xlsxwriter") as writer:
+        all_univariate_outliers.to_excel(
+            writer, sheet_name="Univariate Outliers", index=False
+        )
+        multivariate_outliers.to_excel(
+            writer, sheet_name="Multivariate Outliers", index=False
+        )
+        all_outliers.to_excel(writer, sheet_name="All Outliers", index=False)
+
+    print(f"Outliers report saved to {excel_file_path}")

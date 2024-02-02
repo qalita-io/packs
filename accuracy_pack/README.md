@@ -22,15 +22,21 @@ To use this pack, follow these steps:
 
 ## Output
 - `metrics.json`: Contains precision scores for each float column in the dataset. The structure of the output is as follows:
-  ```json
-  [
-      {
-          "key": "decimal_precision",
-          "value": "<precision_score>",
-          "scope": {
-              "perimeter": "column",
-              "value": "<column_name>"
-          },
-      },
-      ...
-  ]
+
+```json
+[
+    {
+        "key": "decimal_precision",
+        "value": "<precision_score>",
+        "scope": {
+            "perimeter": "column",
+            "value": "<column_name>"
+        },
+    },
+    ...
+]
+```
+
+# Contribute
+
+[This pack is part of Qalita Open Source Assets (QOSA) and is open to contribution. You can help us improve this pack by forking it and submitting a pull request here.](https://github.com/qalita-io/packs)
