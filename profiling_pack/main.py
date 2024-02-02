@@ -7,6 +7,7 @@ import pandas as pd
 import os
 import utils
 from ydata_profiling import ProfileReport
+from datetime import datetime
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -50,21 +51,22 @@ for dataset_name, df in df_dict.items():
 
     # Run the profiling report
     profile = ProfileReport(
-        df, minimal=True, title=f"Profiling Report for {dataset_name}"
+        df,
+        title=f"Profiling Report for {dataset_name}"
     )
 
     # Save the report to HTML
     html_file_name = f"{dataset_name}_report.html"
     profile.to_file(html_file_name)
 
-    if source_config['config']['type'] == 'file':
+    if source_config['type'] == 'file':
 
         source_file_path = source_config['config']['path']
         source_file_dir = os.path.dirname(source_file_path)
-        report_file_path = os.path.join(source_file_dir, f'report_{source_config["name"]}.csv')
-        report.to_csv(report_file_path, index=False)
-
-        profile.to_file(html_file_name)
+        # Format the current date as YYYYMMDD
+        current_date = datetime.now().strftime("%Y%m%d")
+        report_file_path = os.path.join(source_file_dir, f'profiling_report_{source_config["name"]}_{current_date}.html')
+        profile.to_file(report_file_path)
         print("Report exported.")
 
     # Save the report to JSON
