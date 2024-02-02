@@ -1,5 +1,7 @@
 import json
 import utils
+import os
+from datetime import datetime
 
 ########################### Loading Data
 
@@ -108,6 +110,18 @@ for column in df.columns:
                 }
                 recommendations.append(recommendation)
 
+# Recommendation for the dataset
+if precision_metrics:
+    mean_proportion_score = float(precision_metrics[-1]["value"])
+    if mean_proportion_score < 0.9:
+        recommendation = {
+            "content": f"The dataset has {(1-mean_proportion_score)*100:.2f}% of data that are not rounded to the same number of decimals.",
+            "type": "Duplicates",
+            "scope": {"perimeter": "dataset", "value": source_config["name"]},
+            "level": utils.determine_recommendation_level(1 - mean_proportion_score),
+        }
+        recommendations.append(recommendation)
+
 ############################ Writing Metrics and Recommendations to Files
 
 if precision_metrics is not None:
@@ -119,3 +133,46 @@ if recommendations:
     with open("recommendations.json", "w", encoding="utf-8") as f:
         json.dump(recommendations, f, indent=4)
     print("recommendations.json file created successfully.")
+
+
+# ######################## Export:
+# # Step 1: Filter the DataFrame based on precision recommendations
+
+# id_columns = pack_config.get('job', {}).get('id_columns', [])
+
+# # For simplicity, let's assume that columns with a proportion score lower than 0.9 need attention
+# columns_to_check = [item["scope"]["value"] for item in precision_metrics if item["key"] == "proportion_score" and float(item["value"]) < 0.9]
+
+# # Filter the DataFrame for rows that don't meet the rounding criteria in the specified columns
+# expected_precision = float(precision_metrics[1]["value"])
+# rows_with_rounding_issues = df[df[columns_to_check].applymap(lambda x: isinstance(x, float) and (len(str(x).split(".")[1]) if '.' in str(x) else 0) != expected_precision)]
+
+# # Check if there are rows with rounding issues
+# if rows_with_rounding_issues.empty:
+#     print("No rounding issues found. No report will be generated.")
+# else:
+#     # If there are rows with rounding issues, proceed with sorting and exporting
+#     rows_with_rounding_issues = rows_with_rounding_issues.sort_values(by=columns_to_check)
+
+#     # Step 3: Set index or create 'index' column for the Excel export
+#     if id_columns:
+#         # Ensure all id_columns are in the DataFrame columns
+#         valid_id_columns = [col for col in id_columns if col in rows_with_rounding_issues.columns]
+#         if not valid_id_columns:
+#             print("None of the specified 'id_columns' are in the DataFrame. Using default index.")
+#             rows_with_rounding_issues = rows_with_rounding_issues.reset_index(drop=True)
+#         else:
+#             rows_with_rounding_issues = rows_with_rounding_issues.set_index(valid_id_columns)
+#     else:
+#         # If 'id_columns' is not provided or is empty, create an 'index' column with the original DataFrame's index
+#         rows_with_rounding_issues = rows_with_rounding_issues.reset_index()
+
+#     # Continue with the export process
+#     if source_config['type'] == 'file':
+#         source_file_dir = os.path.dirname(source_config['config']['path'])
+#         current_date = datetime.now().strftime("%Y%m%d")
+#         report_file_path = os.path.join(source_file_dir, f'rounding_issues_report_{source_config["name"]}_{current_date}.xlsx')
+
+#         # Export rows with rounding issues to an Excel file
+#         rows_with_rounding_issues.to_excel(report_file_path, index=False)  # Set index=False as 'original_index' is now a column
+#         print(f"Rows with rounding issues have been exported to {report_file_path}")
