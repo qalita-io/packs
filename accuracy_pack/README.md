@@ -22,18 +22,20 @@ To use this pack, follow these steps:
 
 ## Output
 - `metrics.json`: Contains precision scores for each float column in the dataset. The structure of the output is as follows:
-  ```json
-  [
-      {
-          "key": "decimal_precision",
-          "value": "<precision_score>",
-          "scope": {
-              "perimeter": "column",
-              "value": "<column_name>"
-          },
-      },
-      ...
-  ]
+
+```json
+[
+    {
+        "key": "decimal_precision",
+        "value": "<precision_score>",
+        "scope": {
+            "perimeter": "column",
+            "value": "<column_name>"
+        },
+    },
+    ...
+]
+```
 
 # Contribute
 

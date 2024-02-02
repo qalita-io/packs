@@ -1,37 +1,35 @@
 # Profiling
 
-This pack uses [ydata Profiling](https://github.com/ydataai/ydata-profiling) python package to scan and compute general metrics on the data.
+This pack uses [ydata Profiling](https://github.com/ydataai/ydata-profiling) python package 🐍 to scan and compute general metrics 📈 on the data.
 
-<p align="center"><img width="200" src="https://assets.ydata.ai/oss/ydata-profiling_black.png" alt="YData Profiling Logo"></p>
+## Input 📥
 
-## Input
-
-### Configuration
+### Configuration ⚙️
 
 | Name                   | Type  | Required | Default | Description                                              |
 | ---------------------- | ----- | -------- | ------- | -------------------------------------------------------- |
 | `jobs.source.skiprows` | `int` | no       | `0`     | The number of rows to skip at the beginning of the file. |
 
 
-### Source type compabilitily
+### Source type compatibility 🧩
 
-This pack is compatible with **files**  (``csv``, ``xslx``) and **databases** (``MySQL``, ``PostgreSQL``).
+This pack is compatible with **files** 📁 (``csv``, ``xslx``) and **databases** 🖥️ (``MySQL``, ``PostgreSQL``).
 
-## Analysis
+## Analysis 🕵️‍♂️
 
-The pack asses the data and computes the following metrics :
+The pack assesses the data and computes the following metrics:
 
 | Name                         | Description                                                                                        | Scope          | Type                                |
 | ---------------------------- | -------------------------------------------------------------------------------------------------- | -------------- | ----------------------------------- |
-| `n`                          | Number records                                                                                     | dataset        | `integer`                           |
+| `n`                          | Number of records                                                                                  | dataset        | `integer`                           |
 | `n_var`                      | Number of variables                                                                                | dataset        | `integer`                           |
 | `memory_size`                | Memory size of the dataset                                                                         | dataset        | `integer`                           |
 | `record_size`                | Size of a record in bytes                                                                          | dataset        | `integer`                           |
 | `n_cells_missing`            | Number of cells empty                                                                              | dataset        | `integer`                           |
-| `n_vars_with_missing`        | Number of variables  containing missing values                                                     | dataset        | `integer`                           |
-| `n_vars_all_missing`         | Number of variables  containing 100% missing values                                                | dataset        | `integer`                           |
+| `n_vars_with_missing`        | Number of variables containing missing values                                                      | dataset        | `integer`                           |
+| `n_vars_all_missing`         | Number of variables containing 100% missing values                                                 | dataset        | `integer`                           |
 | `p_cells_missing`            | Percentage of cells empty                                                                          | dataset        | `float`                             |
-| `record_size`                | Number of reccords                                                                                 | dataset        | `integer`                           |
+| `record_size`                | Number of records                                                                                  | dataset        | `integer`                           |
 | `types_unsupported`          | Number of variables with unsupported types                                                         | dataset        | `integer`                           |
 | `types_numeric`              | Number of variables with numeric types                                                             | dataset        | `integer`                           |
 | `types_text`                 | Number of variables with text types                                                                | dataset        | `integer`                           |
@@ -48,7 +46,7 @@ The pack asses the data and computes the following metrics :
 | `value_counts_without_nan`   | Value counts without NaN                                                                           | column         | `dict` of value:count               |
 | `value_counts_index_sorted`  | `value_counts_without_nan` index sorted                                                            | column         | `dict` of value:count               |
 | `ordering`                   | Ordering of the variable    1: ASC / 0: DESC                                                       | column         | `boolean`                           |
-| `completeness_score`         | Completeness score  of the variable                                                                | column         | `float`                             |
+| `completeness_score`         | Completeness score of the variable                                                                 | column         | `float`                             |
 | `n_negative`                 | Number of negative values                                                                          | column:Numeric | `integer`                           |
 | `p_negative`                 | Percentage of negative values                                                                      | column:Numeric | `float`                             |
 | `n_zeros`                    | Number of zero values                                                                              | column:Numeric | `integer`                           |
@@ -77,7 +75,7 @@ The pack asses the data and computes the following metrics :
 | `monotonic_decrease`         | Is the variable monotonic decreasing                                                               | column:Numeric | `boolean`                           |
 | `monotonic_increase_strict`  | Is the variable strictly monotonic increasing                                                      | column:Numeric | `boolean`                           |
 | `monotonic_decrease_strict`  | Is the variable strictly monotonic decreasing                                                      | column:Numeric | `boolean`                           |
-| `histogram`                  | Histogram of the variable                                                                          | column:Numeric | `dict` {counts[],bin_edges[]}       |
+| `histogram`                  | Histogram of the variable                                                                          | column:Numeric | `dict` {counts[], bin_edges[]}      |
 | `n_category`                 | Number of categories                                                                               | column:Text    | `integer`                           |
 | `word_counts`                | Word counts                                                                                        | column:Text    | `dict` of word:count                |
 | `n_distinct`                 | Number of distinct values                                                                          | column:Text    | `integer`                           |
@@ -89,31 +87,30 @@ The pack asses the data and computes the following metrics :
 | `min_length`                 | Minimum length of the variable                                                                     | column:Text    | `integer`                           |
 | `mean_length`                | Mean length of the variable                                                                        | column:Text    | `float`                             |
 | `median_length`              | Median length of the variable                                                                      | column:Text    | `float`                             |
-| `histogram_length`           | Histogram of the variable length                                                                   | column:Text    | `dict` {counts[],bin_edges[]}       |
+| `histogram_length`           | Histogram of the variable length                                                                   | column:Text    | `dict` {counts[], bin_edges[]}      |
 | `n_scripts`                  | Number of scripts                                                                                  | column:Text    | `integer`                           |
 | `script_counts`              | Script counts    EX: `{'Latin': 918}`                                                              | column:Text    | `dict` of script:count              |
 | `script_char_counts`         | Script character counts    EX: `{'Latin': {'a': 918}}`                                             | column:Text    | `dict` of script:dict of char_count |
 
+## Output 📤
 
-## Output
-
-### Report
-
-The pack generates a report with the computed metrics and the following sections:
-
-- **Overview**
-- **Variables**
-- **Warnings**
-- **Correlations**
-- **Histogram**
-- **Interactions**
-- **Missing Values**
-- **Sample**
-- **File**
+### Report 📊
 
 ![Profiling Report](https://docs.profiling.ydata.ai/latest/_static/img/ydata-profiling.gif)
 
 
-# Contribute
+The pack generates a report with the computed metrics and the following sections:
 
-[This pack is part of Qalita Open Source Assets (QOSA) and is open to contribution. You can help us improve this pack by forking it and submitting a pull request here.](https://github.com/qalita-io/packs)
+- **Overview** 👁️ Get a high-level summary of the dataset, including key metrics and insights.
+- **Variables** 📊 Dive into each variable, reviewing distributions, and statistics.
+- **Warnings** ⚠️ Highlight potential issues in the data, such as outliers or missing values.
+- **Correlations** 🔗 Explore the relationships between different variables.
+- **Histogram** 📈 Visualize the distribution of data for each variable.
+- **Interactions** 💡 Discover interaction effects between variables.
+- **Missing Values** ❓ Identify and address gaps in the data.
+- **Sample** 🧪 Take a closer look at a subset of the data.
+- **File** 📁 Access and manage the underlying data file.
+
+# Contribute 💡
+
+[This pack is part of Qalita Open Source Assets (QOSA) and is open to contribution. You can help us improve this pack by forking it and submitting a pull request here.](https://github.com/qalita-io/packs) 👥🚀
