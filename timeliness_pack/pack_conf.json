@@ -1,6 +1,9 @@
 {
     "job": {
-        "compute_score_columns": [""]
+        "compute_score_columns": [],
+        "source": {
+            "skiprows": 0
+        }
     },
     "charts": {
         "overview": [

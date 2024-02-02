@@ -111,6 +111,8 @@ The pack generates a report with the computed metrics and the following sections
 - **Sample** 🧪 Take a closer look at a subset of the data.
 - **File** 📁 Access and manage the underlying data file.
 
+Filename is `profiling_report_{source_config["name"]}_{current_date}.xlsx`
+
 # Contribute 💡
 
 [This pack is part of Qalita Open Source Assets (QOSA) and is open to contribution. You can help us improve this pack by forking it and submitting a pull request here.](https://github.com/qalita-io/packs) 👥🚀

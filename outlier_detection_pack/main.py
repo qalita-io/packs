@@ -10,13 +10,6 @@ from pyod.models.knn import KNN
 print("Load source_conf.json")
 with open("source_conf.json", "r", encoding="utf-8") as file:
     source_config = json.load(file)
-
-if source_config["type"] != "file":
-    raise ValueError("This pack only supports file type configuration.")
-
-source_file_path = source_config["config"]["path"]
-source_file_dir = os.path.dirname(source_file_path)
-
 # Load the pack configuration file
 print("Load pack_conf.json")
 with open("pack_conf.json", "r", encoding="utf-8") as file:
@@ -225,12 +218,6 @@ if recommendations:
 
 ####################### Export
 
-# Format the current date as YYYYMMDD
-current_date = datetime.now().strftime("%Y%m%d")
-
-# Get the source name from the source_config
-source_name = source_config.get("name", "default_source")
-
 # Step 1: Compile Univariate Outliers
 all_univariate_outliers = pd.DataFrame()
 for column, outliers in univariate_outliers.items():
@@ -284,17 +271,20 @@ all_outliers = all_outliers[id_and_other_columns]
 
 # Step 4: Save to Excel
 # Format the excel file path with source name and current date
-excel_file_name = f"outliers_report_{source_name}_{current_date}.xlsx"
-excel_file_path = os.path.join(source_file_dir, excel_file_name)
+if source_config['type'] == 'file':
+    source_file_dir = os.path.dirname(source_config["config"]["path"])
+    current_date = datetime.now().strftime("%Y%m%d")
+    excel_file_name = f"outliers_report_{source_config['name']}_{current_date}.xlsx"
+    excel_file_path = os.path.join(source_file_dir, excel_file_name)
 
-# Use this path in the ExcelWriter
-with pd.ExcelWriter(excel_file_path, engine="xlsxwriter") as writer:
-    all_univariate_outliers.to_excel(
-        writer, sheet_name="Univariate Outliers", index=False
-    )
-    multivariate_outliers.to_excel(
-        writer, sheet_name="Multivariate Outliers", index=False
-    )
-    all_outliers.to_excel(writer, sheet_name="All Outliers", index=False)
+    # Use this path in the ExcelWriter
+    with pd.ExcelWriter(excel_file_path, engine="xlsxwriter") as writer:
+        all_univariate_outliers.to_excel(
+            writer, sheet_name="Univariate Outliers", index=False
+        )
+        multivariate_outliers.to_excel(
+            writer, sheet_name="Multivariate Outliers", index=False
+        )
+        all_outliers.to_excel(writer, sheet_name="All Outliers", index=False)
 
-print(f"Outliers report saved to {excel_file_path}")
+    print(f"Outliers report saved to {excel_file_path}")

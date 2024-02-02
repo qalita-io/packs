@@ -60,14 +60,13 @@ for dataset_name, df in df_dict.items():
     profile.to_file(html_file_name)
 
     if source_config['type'] == 'file':
-
-        source_file_path = source_config['config']['path']
-        source_file_dir = os.path.dirname(source_file_path)
-        # Format the current date as YYYYMMDD
+        source_file_dir = os.path.dirname(source_config['config']['path'])
         current_date = datetime.now().strftime("%Y%m%d")
         report_file_path = os.path.join(source_file_dir, f'profiling_report_{source_config["name"]}_{current_date}.html')
+
         profile.to_file(report_file_path)
-        print("Report exported.")
+
+        print(f"Profiling report saved to {report_file_path}")
 
     # Save the report to JSON
     json_file_name = f"{dataset_name}_report.json"
