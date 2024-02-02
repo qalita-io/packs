@@ -75,6 +75,7 @@ def load_data_from_file(file_path, pack_config):
                     memory_map=True,
                     skiprows=int(skiprows),
                     on_bad_lines="warn",
+                    encoding="utf-8",
                 )
             elif file_path.endswith(".xlsx"):
                 df = pd.read_excel(
@@ -86,7 +87,11 @@ def load_data_from_file(file_path, pack_config):
         # Logic when 'skiprows' is not specified
         if file_path.endswith(".csv"):
             df = pd.read_csv(
-                file_path, low_memory=False, memory_map=True, on_bad_lines="warn"
+                file_path,
+                low_memory=False,
+                memory_map=True,
+                on_bad_lines="warn",
+                encoding="utf-8",
             )
         elif file_path.endswith(".xlsx"):
             df = pd.read_excel(file_path, engine="openpyxl")
