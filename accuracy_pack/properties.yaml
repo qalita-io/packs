@@ -2,5 +2,6 @@ description: Compute accuracy metrics
 icon: icon.png
 name: accuracy
 type: accuracy
-version: 1.0.15
+url: https://github.com/qalita-io/packs/tree/main/accuracy_pack
+version: 1.1.0
 visibility: public

@@ -1,7 +1,11 @@
 {
     "job": {
         "normality_threshold": 0.90,
-        "outlier_threshold": 0.5
+        "outlier_threshold": 0.5,
+        "id_columns": [],
+        "source": {
+            "skiprows": 0
+        }
     },
     "charts": {
         "overview": [
@@ -13,6 +17,12 @@
             }
         ],
         "scoped": [
+            {
+                "metric_key": "outliers",
+                "chart_type": "text",
+                "display_title": true,
+                "justify": true
+            },
             {
                 "metric_key": "normality_score",
                 "chart_type": "text",

@@ -4,8 +4,10 @@ Main file for pack
 import json
 import warnings
 import pandas as pd
-from ydata_profiling import ProfileReport
+import os
 import utils
+from ydata_profiling import ProfileReport
+from datetime import datetime
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -49,12 +51,22 @@ for dataset_name, df in df_dict.items():
 
     # Run the profiling report
     profile = ProfileReport(
-        df, minimal=True, title=f"Profiling Report for {dataset_name}"
+        df,
+        title=f"Profiling Report for {dataset_name}"
     )
 
     # Save the report to HTML
     html_file_name = f"{dataset_name}_report.html"
     profile.to_file(html_file_name)
+
+    if source_config['type'] == 'file':
+        source_file_dir = os.path.dirname(source_config['config']['path'])
+        current_date = datetime.now().strftime("%Y%m%d")
+        report_file_path = os.path.join(source_file_dir, f'profiling_report_{source_config["name"]}_{current_date}.html')
+
+        profile.to_file(report_file_path)
+
+        print(f"Profiling report saved to {report_file_path}")
 
     # Save the report to JSON
     json_file_name = f"{dataset_name}_report.json"

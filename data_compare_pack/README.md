@@ -30,3 +30,7 @@ The pack generates the following files as output, offering a comprehensive overv
 
 ## Usage
 This pack is designed to be user-friendly and can be easily integrated into your data analysis pipeline. Ensure the configuration files are set up correctly, and then execute the pack to perform the comparison and generate the metrics.
+
+# Contribute
+
+[This pack is part of Qalita Open Source Assets (QOSA) and is open to contribution. You can help us improve this pack by forking it and submitting a pull request here.](https://github.com/qalita-io/packs)

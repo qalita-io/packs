@@ -57,3 +57,7 @@ The Schema Scanner Pack performs the following main tasks:
 | `metrics`         | `array` | The metrics computed by the profiling. |
 | `recommendations` | `array` | The metrics computed by the profiling. |
 | `schemas`         | `array` | The metrics computed by the profiling. |
+
+# Contribute
+
+[This pack is part of Qalita Open Source Assets (QOSA) and is open to contribution. You can help us improve this pack by forking it and submitting a pull request here.](https://github.com/qalita-io/packs)
