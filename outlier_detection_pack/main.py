@@ -10,6 +10,9 @@ print("Load source_conf.json")
 with open("source_conf.json", "r", encoding="utf-8") as file:
     source_config = json.load(file)
 
+if source_config['config']['type'] != 'file':
+    raise ValueError("This pack only supports file type configuration.")
+
 source_file_path = source_config['config']['path']
 source_file_dir = os.path.dirname(source_file_path)
 

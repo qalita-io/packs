@@ -69,3 +69,7 @@ This pack is designed for data quality management, focusing on schema validation
 ---
 
 Please ensure that you have the correct permissions and valid API tokens before running this pack. Also, verify the schema and version details in the respective configuration files to avoid inconsistencies.
+
+# Contribute
+
+[This pack is part of Qalita Open Source Assets (QOSA) and is open to contribution. You can help us improve this pack by forking it and submitting a pull request here.](https://github.com/qalita-io/packs)

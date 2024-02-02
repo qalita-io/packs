@@ -40,3 +40,8 @@ The Outlier Detection pack focuses on identifying and quantifying outliers withi
 ## Configuration Notes
 
 Ensure proper setup of `source_conf.json` and `pack_conf.json`, with special attention to the `outlier_threshold` parameter in `pack_conf.json` to tailor the sensitivity of outlier detection.
+
+# Contribute
+
+[This pack is part of Qalita Open Source Assets (QOSA) and is open to contribution. You can help us improve this pack by forking it and submitting a pull request here.](https://github.com/qalita-io/packs)
+
