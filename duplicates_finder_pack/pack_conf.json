@@ -1,6 +1,10 @@
 {
     "job": {
-        "compute_uniqueness_columns": []
+        "compute_uniqueness_columns": [],
+        "id_columns": [],
+        "source": {
+            "skiprows": 0
+        }
     },
     "charts": {
         "overview": [
