@@ -32,13 +32,16 @@ def compute_metrics(df):
     # Compute precision score for each float column
     precision_data = []
     total_proportion_score = 0  # Initialize total proportion score
+    valid_columns_count = 0  # Count of columns that have at least one non-NaN value
 
     for column in float_columns:
-        decimals_count = (
-            df[column]
-            .dropna()
-            .apply(lambda x: len(str(x).split(".")[1]) if "." in str(x) else 0)
-        )
+        column_data = df[column].dropna()
+
+        # Skip the column if it only contains NaN values
+        if column_data.empty:
+            continue
+
+        decimals_count = column_data.apply(lambda x: len(str(x).split(".")[1]) if "." in str(x) else 0)
         max_decimals = decimals_count.max()
         most_common_decimals_series = decimals_count.mode()
 
@@ -48,37 +51,32 @@ def compute_metrics(df):
             most_common_decimals = 0
             proportion_score = 0
         else:
-            most_common_decimals = most_common_decimals_series[
-                0
-            ]  # Get the most common decimals count
-            proportion_score = decimals_count[
-                decimals_count == most_common_decimals
-            ].count() / len(decimals_count)
+            most_common_decimals = most_common_decimals_series[0]  # Get the most common decimals count
+            proportion_score = decimals_count[decimals_count == most_common_decimals].count() / len(decimals_count)
 
         total_proportion_score += proportion_score  # Add proportion score to the total
+        valid_columns_count += 1  # Increment valid columns count
 
-        precision_data.append(
-            {
-                "key": "decimal_precision",
-                "value": str(max_decimals),  # Maximum number of decimals
-                "scope": {"perimeter": "column", "value": column},
-            }
-        )
+        if max_decimals > 0:
+            precision_data.append(
+                {
+                    "key": "decimal_precision",
+                    "value": str(max_decimals),  # Maximum number of decimals
+                    "scope": {"perimeter": "column", "value": column},
+                }
+            )
 
+        # Always include proportion_score in precision_data even if max_decimals is 0
         precision_data.append(
             {
                 "key": "proportion_score",
-                "value": str(
-                    round(proportion_score, 2)
-                ),  # Proportion of values with the most common decimals count
+                "value": str(round(proportion_score, 2)),  # Proportion of values with the most common decimals count
                 "scope": {"perimeter": "column", "value": column},
             }
         )
 
     # Calculate the mean of proportion scores
-    mean_proportion_score = (
-        total_proportion_score / len(float_columns) if float_columns.any() else 0
-    )
+    mean_proportion_score = total_proportion_score / valid_columns_count if valid_columns_count > 0 else 0
 
     # Add the mean proportion score to the precision data
     precision_data.append(
@@ -104,7 +102,7 @@ for column in df.columns:
             if proportion_score < 0.9:
                 recommendation = {
                     "content": f"Column '{column}' has {(1-proportion_score)*100:.2f}% of data that are not rounded to the same number of decimals.",
-                    "type": "Duplicates",
+                    "type": "Unevenly Rounded Data",
                     "scope": {"perimeter": "column", "value": column},
                     "level": utils.determine_recommendation_level(1 - proportion_score),
                 }
@@ -116,7 +114,7 @@ if precision_metrics:
     if mean_proportion_score < 0.9:
         recommendation = {
             "content": f"The dataset has {(1-mean_proportion_score)*100:.2f}% of data that are not rounded to the same number of decimals.",
-            "type": "Duplicates",
+            "type": "Unevenly Rounded Data",
             "scope": {"perimeter": "dataset", "value": source_config["name"]},
             "level": utils.determine_recommendation_level(1 - mean_proportion_score),
         }

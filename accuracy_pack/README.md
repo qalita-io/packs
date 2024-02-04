@@ -32,9 +32,7 @@ This pack is compatible with **files** 📁 (``csv``, ``xslx``).
 
 ### Report 📊
 
-The report exports the duplicated data by adding the id column, and groupy by duplicates and sorting them.
-
-Filename is `accuracy_report_{source_config["name"]}_{current_date}.xlsx`
+This pack doesn't generate any output or report.
 
 # Contribute 💡
 
