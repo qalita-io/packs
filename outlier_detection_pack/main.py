@@ -274,7 +274,7 @@ all_outliers = all_outliers[id_and_other_columns]
 if source_config['type'] == 'file':
     source_file_dir = os.path.dirname(source_config["config"]["path"])
     current_date = datetime.now().strftime("%Y%m%d")
-    excel_file_name = f"outliers_report_{source_config['name']}_{current_date}.xlsx"
+    excel_file_name = f"{current_date}_outlier_detection_report_{source_config['name']}.xlsx"
     excel_file_path = os.path.join(source_file_dir, excel_file_name)
 
     # Use this path in the ExcelWriter

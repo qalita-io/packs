@@ -150,7 +150,7 @@ else:
     if source_config['type'] == 'file':
         source_file_dir = os.path.dirname(source_config['config']['path'])
         current_date = datetime.now().strftime("%Y%m%d")
-        report_file_path = os.path.join(source_file_dir, f'duplicates_report_{source_config["name"]}_{current_date}.xlsx')
+        report_file_path = os.path.join(source_file_dir, f'{current_date}_duplicates_finder_report_{source_config["name"]}.xlsx')
 
         # Export duplicated rows to an Excel file
         duplicated_rows.to_excel(report_file_path, index=False)  # Set index=False as 'original_index' is now a column

@@ -2,7 +2,7 @@
 
 The Outlier Detection pack focuses on identifying and quantifying outliers within datasets, providing insights into the normality of data distributions. It utilizes the K-Nearest Neighbors (KNN) algorithm from the [PyOD library](https://pyod.readthedocs.io/) for outlier detection in both univariate (column-wise) and multivariate (dataset-wise) contexts.
 
-![Outlier Detection](https://pyod.readthedocs.io/en/latest/_images/ALL.png)
+<!-- ![Outlier Detection](https://pyod.readthedocs.io/en/latest/_images/ALL.png) -->
 
 ## Input 📥
 

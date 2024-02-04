@@ -96,7 +96,7 @@ The pack assesses the data and computes the following metrics:
 
 ### Report 📊
 
-![Profiling Report](https://docs.profiling.ydata.ai/latest/_static/img/ydata-profiling.gif)
+<!-- ![Profiling Report](https://docs.profiling.ydata.ai/latest/_static/img/ydata-profiling.gif) -->
 
 The pack generates a report with the computed metrics and the following sections:
 
