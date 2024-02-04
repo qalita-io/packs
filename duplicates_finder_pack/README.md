@@ -1,7 +1,5 @@
 # Duplicates Finder
 
-<!-- ![Duplicates Finder](https://raw.githubusercontent.com/qalita-io/packs/dev/duplicates_finder_pack/duplicates_finder_banner.png) -->
-
 Duplicates finder searches for duplicates data and computes metrics.
 
 ## Input 📥
