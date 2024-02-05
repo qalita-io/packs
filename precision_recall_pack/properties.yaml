@@ -1,0 +1,7 @@
+description: Compute precision/recall scores between a source and a target
+icon: icon.png
+name: precision_recall
+type: consistency
+url: https://github.com/qalita-io/packs/tree/main/precision_recall_pack
+version: 1.0.0
+visibility: public

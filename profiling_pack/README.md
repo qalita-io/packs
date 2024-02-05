@@ -108,7 +108,7 @@ The pack generates a report with the computed metrics and the following sections
 - **Sample** 🧪 Take a closer look at a subset of the data.
 - **File** 📁 Access and manage the underlying data file.
 
-Filename is `profiling_report_{source_config["name"]}_{current_date}.xlsx`
+Filename is `{current_date}_profiling_report_{source_config["name"]}.xlsx`
 
 # Contribute 💡
 
