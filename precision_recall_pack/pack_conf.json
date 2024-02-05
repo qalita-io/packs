@@ -1,0 +1,25 @@
+{
+    "job": {
+        "compute_precision_recall_columns": [],
+        "id_columns": [],
+        "source": {
+            "skiprows": 0
+        }
+    },
+    "charts": {
+        "overview": [
+            {
+                "metric_key": "score",
+                "chart_type": "text",
+                "display_title": true,
+                "justify": true
+            },
+            {
+                "metric_key": "duplicates",
+                "chart_type": "text",
+                "display_title": true,
+                "justify": true
+            }
+        ]
+    }
+}

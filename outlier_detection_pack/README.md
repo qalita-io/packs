@@ -42,7 +42,7 @@ The pack generates a report containing the following insights:
 * **Univariate Outlier Detection**: A summary of the normality score for each numeric column, indicating the proportion of inliers in each column.
 * **Multivariate Outlier Detection**: A summary of the normality score for the entire dataset, indicating the proportion of inliers across the entire dataset.
 
-Filename is `outliers_report_{source_config["name"]}_{current_date}.xlsx`
+Filename is `{current_date}_outlier_detection_report_{source_config["name"]}.xlsx`
 
 # Contribute 💡
 
