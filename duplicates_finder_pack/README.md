@@ -1,7 +1,5 @@
 # Duplicates Finder
 
-![Duplicates Finder](https://raw.githubusercontent.com/qalita-io/packs/dev/duplicates_finder_pack/duplicates_finder_banner.png)
-
 Duplicates finder searches for duplicates data and computes metrics.
 
 ## Input 📥
@@ -33,7 +31,7 @@ This pack is compatible with **files** 📁 (``csv``, ``xslx``) and **databases*
 
 The report exports the duplicated data by adding the id column, and groupy by duplicates and sorting them.
 
-Filename is `duplicates_report_{source_config["name"]}_{current_date}.xlsx`
+Filename is `{current_date}_duplicates_finder_report_{source_config["name"]}_.xlsx`
 
 # Contribute 💡
 

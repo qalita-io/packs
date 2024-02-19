@@ -96,9 +96,6 @@ The pack assesses the data and computes the following metrics:
 
 ### Report 📊
 
-![Profiling Report](https://docs.profiling.ydata.ai/latest/_static/img/ydata-profiling.gif)
-
-
 The pack generates a report with the computed metrics and the following sections:
 
 - **Overview** 👁️ Get a high-level summary of the dataset, including key metrics and insights.
@@ -111,7 +108,7 @@ The pack generates a report with the computed metrics and the following sections
 - **Sample** 🧪 Take a closer look at a subset of the data.
 - **File** 📁 Access and manage the underlying data file.
 
-Filename is `profiling_report_{source_config["name"]}_{current_date}.xlsx`
+Filename is `{current_date}_profiling_report_{source_config["name"]}.xlsx`
 
 # Contribute 💡
 
