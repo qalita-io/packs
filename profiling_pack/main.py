@@ -62,7 +62,7 @@ for dataset_name, df in df_dict.items():
     if source_config['type'] == 'file':
         source_file_dir = os.path.dirname(source_config['config']['path'])
         current_date = datetime.now().strftime("%Y%m%d")
-        report_file_path = os.path.join(source_file_dir, f'profiling_report_{source_config["name"]}_{current_date}.html')
+        report_file_path = os.path.join(source_file_dir, f'{current_date}_profiling_report_{source_config["name"]}.html')
 
         profile.to_file(report_file_path)
 
