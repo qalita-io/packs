@@ -7,7 +7,7 @@ license = "Proprietary"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.12"
+python = ">=3.10,<3.12"
 ydata-profiling = "^4.6.0"
 matplotlib = "3.7.0"
 lxml = "^4.9.3"
@@ -17,6 +17,7 @@ sqlalchemy = "^2.0.23"
 html5lib = "^1.1"
 beautifulsoup4 = "^4.12.3"
 psycopg2-binary = "^2.9.9"
+qalita-core = "^0.1.0"
 
 [build-system]
 requires = ["poetry-core"]
