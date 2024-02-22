@@ -1,7 +1,6 @@
 from qalita_core.pack import Pack
 from qalita_core.utils import determine_recommendation_level
 from datetime import datetime
-import pandas as pd
 import os
 
 pack = Pack()

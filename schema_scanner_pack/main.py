@@ -1,34 +1,13 @@
-"""
-Main file for pack
-"""
 import json
-import warnings
 import pandas as pd
 from ydata_profiling import ProfileReport
+from qalita_core.pack import Pack
 
-warnings.filterwarnings("ignore", category=DeprecationWarning)
-
-########################### Loading Data
-
-# Load the configuration file
-print("Load source_conf.json")
-with open("source_conf.json", "r", encoding="utf-8") as file:
-    source_config = json.load(file)
-
-# Load the pack configuration file
-print("Load pack_conf.json")
-with open("pack_conf.json", "r", encoding="utf-8") as file:
-    pack_config = json.load(file)
-
-# Load data using the opener.py logic
-from opener import load_data
-
-df_dict = load_data(source_config, pack_config)
+pack = Pack()
+pack.load_data("source")
+df_dict = pack.df_source
 
 ########################### Profiling and Aggregating Results
-
-# Initialize lists to store aggregated results
-aggregated_schemas = []
 
 # Ensure that data is loaded
 if not df_dict:
@@ -38,7 +17,9 @@ if not df_dict:
 for dataset_name, df in df_dict.items():
     # Determine the appropriate name for 'dataset' in 'scope'
     dataset_scope_name = (
-        dataset_name if source_config["type"] == "database" else source_config["name"]
+        dataset_name
+        if pack.source_config["type"] == "database"
+        else pack.source_config["name"]
     )
 
     print(f"Generating profile for {dataset_name}")
@@ -69,23 +50,25 @@ for dataset_name, df in df_dict.items():
         report = json.load(file)
 
     ############################ Schemas
-    schemas_data = []
-
     # Add entries for each variable
     for variable_name in report["variables"].keys():
-        entry = {
-            "key": "column",
-            "value": variable_name,
-            "scope": {
-                "perimeter": "column",
+        pack.schemas.data.append(
+            {
+                "key": "column",
                 "value": variable_name,
-                "parent_scope": {"perimeter": "dataset", "value": dataset_scope_name},
-            },
-        }
-        schemas_data.append(entry)
+                "scope": {
+                    "perimeter": "column",
+                    "value": variable_name,
+                    "parent_scope": {
+                        "perimeter": "dataset",
+                        "value": dataset_scope_name,
+                    },
+                },
+            }
+        )
 
-    if source_config["type"] == "database":
-        schemas_data.append(
+    if pack.source_config["type"] == "database":
+        pack.schemas.data.append(
             {
                 "key": "dataset",
                 "value": dataset_scope_name,
@@ -94,13 +77,13 @@ for dataset_name, df in df_dict.items():
                     "value": dataset_scope_name,
                     "parent_scope": {
                         "perimeter": "database",
-                        "value": source_config["name"],
+                        "value": pack.source_config["name"],
                     },
                 },
             }
         )
     else:
-        schemas_data.append(
+        pack.schemas.data.append(
             {
                 "key": "dataset",
                 "value": dataset_scope_name,
@@ -108,27 +91,15 @@ for dataset_name, df in df_dict.items():
             }
         )
 
-    aggregated_schemas.extend(schemas_data)
-
 ############################ Writing Results to Files
 
-if source_config["type"] == "database":
-    aggregated_schemas.append(
+if pack.source_config["type"] == "database":
+    pack.schemas.data.append(
         {
             "key": "database",
-            "value": source_config["name"],
-            "scope": {"perimeter": "database", "value": source_config["name"]},
+            "value": pack.source_config["name"],
+            "scope": {"perimeter": "database", "value": pack.source_config["name"]},
         }
     )
 
-# Convert aggregated lists to DataFrames
-schemas_df = pd.DataFrame(aggregated_schemas)
-
-# Convert the DataFrames to JSON strings
-schemas_json = schemas_df.to_json(orient="records")
-
-# Write the JSON strings to files
-with open("schemas.json", "w", encoding="utf-8") as f:
-    json.dump(json.loads(schemas_json), f, indent=4)
-
-print("Processing completed.")
+pack.schemas.save()

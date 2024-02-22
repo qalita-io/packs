@@ -1,4 +1,5 @@
 from qalita_core.pack import Pack
+import re
 import datacompy
 
 pack = Pack()

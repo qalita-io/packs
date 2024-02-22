@@ -1,5 +1,4 @@
-from qalita_core.pack import *
-from qalita_core.utils import *
+from qalita_core.pack import Pack
 
 pack = Pack()
 pack.load_data("source")
