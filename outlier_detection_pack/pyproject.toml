@@ -7,15 +7,10 @@ license = "Proprietary"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.12"
-matplotlib = "3.7.0"
-lxml = "^4.9.3"
-pandas = "2.0.3"
-openpyxl = "^3.1.2"
-sqlalchemy = "^2.0.23"
+python = ">=3.10,<3.12"
+qalita-core = "^0.1.0"
 pyod = "^1.1.2"
 numpy = "^1.26.3"
-xlsxwriter = "^3.1.9"
 
 [build-system]
 requires = ["poetry-core"]

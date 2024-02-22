@@ -1,0 +1,15 @@
+{
+    "config": {
+        "path": "../tests/data/LiveLongerData.csv"
+    },
+    "description": "What factors will really increase your average life expectancy and lifespan?",
+    "id": 9,
+    "name": "Life Longevity Factors",
+    "owner": "admin",
+    "owner_id": 1,
+    "reference": true,
+    "sensitive": false,
+    "type": "file",
+    "validate": "valid",
+    "visibility": "internal"
+}
