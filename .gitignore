@@ -3,3 +3,4 @@ poetry.lock
 profiling_pack/source_conf.json
 docker-compose.yml
 docker-compose.yml
+/.pytest_cache/
