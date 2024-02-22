@@ -14,7 +14,7 @@ pack.load_data("source")
 # Fill missing values with mean
 for column in pack.df_source.columns:
     if np.issubdtype(pack.df_source[column].dtype, np.number):
-        pack.df_source[column].fillna(pack.df_source[column].mean(), inplace=True)
+        pack.df_source[column] = pack.df_source[column].fillna(pack.df_source[column].mean())
 
 # Identify columns that still contain NaN values after filling
 columns_with_nan = [
@@ -133,13 +133,8 @@ try:
             "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
         }
     )
-
 except ValueError as e:
-    print(f"Error: {e}")
-    raise ValueError(
-        "Multivariate outlier detection failed. Maybe you don't have enough data or variables, Please check your data and try again."
-    )
-
+    print(f"Error fitting the model: {e}")
 
 pack.metrics.save()
 
