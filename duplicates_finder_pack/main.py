@@ -32,22 +32,22 @@ duplication_score = round(total_duplicates / total_rows if total_rows > 0 else 0
 score = 1 - duplication_score
 
 # Add the inverted duplication score to the metrics
-aggregated_score_entry = {
-    "key": "score",
-    "value": score,
-    "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
-}
-
-pack.metrics.data.append(aggregated_score_entry)
+pack.metrics.data.append(
+    {
+        "key": "score",
+        "value": score,
+        "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
+    }
+)
 
 # Create metric entries as DataFrames
-total_duplicates_df = {
-    "key": "duplicates",
-    "value": total_duplicates,
-    "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
-}
-
-pack.metrics.data.append(total_duplicates_df)
+pack.metrics.data.append(
+    {
+        "key": "duplicates",
+        "value": int(total_duplicates),
+        "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
+    }
+)
 
 # Check if scoped score is calculated and add its metrics
 if (
@@ -57,7 +57,7 @@ if (
     pack.metrics.data.append(
         {
             "key": "duplicates",
-            "value": total_duplicates,
+            "value": int(total_duplicates),
             "scope": {
                 "perimeter": "dataset",
                 "value": ", ".join(uniqueness_columns),
