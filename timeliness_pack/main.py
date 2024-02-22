@@ -3,33 +3,14 @@ import pandas as pd
 from dateutil.parser import parse
 from datetime import datetime
 import re
+from qalita_core.pack import Pack
 
-########################### Loading Data
-
-# Load the configuration file
-print("Load source_conf.json")
-with open("source_conf.json", "r", encoding="utf-8") as file:
-    source_config = json.load(file)
-
-# Load the pack configuration file
-print("Load pack_conf.json")
-with open("pack_conf.json", "r", encoding="utf-8") as file:
-    pack_config = json.load(file)
-
-# Load data using the opener.py logic
-from opener import load_data
-
-df = load_data(source_config, pack_config)
-
-############################ Metrics
-
-metrics_data = []  # Initialize the list of metrics
-recommendations = []  # Initialize the list of recommendations
+pack = Pack()
+pack.load_data("source")
 
 ############################ Infer Data Types and Count Date Columns
 
 date_columns_count = 0  # Initialize the counter for date columns
-
 
 def is_date(string):
     # Define patterns for date formats
@@ -75,8 +56,8 @@ def calculate_timeliness_score(days_since):
     return max(0.0, 1 - (days_since / 365))
 
 
-for column in df.columns:
-    unique_values = df[column].dropna().unique()
+for column in pack.df_source.columns:
+    unique_values = pack.df_source[column].dropna().unique()
     sample_size = min(10, len(unique_values))
     sample_values = unique_values[:sample_size]
 
@@ -84,7 +65,7 @@ for column in df.columns:
 
     if "year_only" in date_type:
         # Handle year-only columns
-        year_data = df[column].astype(int)
+        year_data = pack.df_source[column].astype(int)
         earliest_year = year_data.min()
         latest_year = year_data.max()
 
@@ -97,7 +78,7 @@ for column in df.columns:
         timeliness_score_year = calculate_timeliness_score(timedelta_latest_year)
 
         # Append year-only metrics to metrics_data
-        metrics_data.extend(
+        pack.metrics.data.extend(
             [
                 {
                     "key": "earliest_year",
@@ -128,14 +109,14 @@ for column in df.columns:
         )
 
     elif True in date_type:
-        df[column] = pd.to_datetime(df[column])
+        pack.df_source[column] = pd.to_datetime(pack.df_source[column])
         date_columns_count += (
             1  # Increment the counter when a date column is identified
         )
 
         # Get the earliest and latest date in the column
-        earliest_date = df[column].min()
-        latest_date = df[column].max()
+        earliest_date = pack.df_source[column].min()
+        latest_date = pack.df_source[column].max()
 
         # Skip column if it contains only null values or NaT
         if pd.isnull(earliest_date) or pd.isnull(latest_date):
@@ -152,20 +133,26 @@ for column in df.columns:
             "days_since_latest_date",
         ]
         date_info_values = [
-            earliest_date.strftime("%Y-%m-%d")
-            if earliest_date and earliest_date is not pd.NaT
-            else None,
-            latest_date.strftime("%Y-%m-%d")
-            if latest_date and latest_date is not pd.NaT
-            else None,
-            timedelta_earliest
-            if earliest_date and earliest_date is not pd.NaT
-            else None,
+            (
+                earliest_date.strftime("%Y-%m-%d")
+                if earliest_date and earliest_date is not pd.NaT
+                else None
+            ),
+            (
+                latest_date.strftime("%Y-%m-%d")
+                if latest_date and latest_date is not pd.NaT
+                else None
+            ),
+            (
+                timedelta_earliest
+                if earliest_date and earliest_date is not pd.NaT
+                else None
+            ),
             timedelta_latest if latest_date and latest_date is not pd.NaT else None,
         ]
 
         for key, value in zip(date_info_keys, date_info_values):
-            metrics_data.append(
+            pack.metrics.data.append(
                 {
                     "key": key,
                     "value": str(value) if value is not None else "N/A",
@@ -175,7 +162,7 @@ for column in df.columns:
 
         # Check for latest date older than one year
         if timedelta_latest > 365:
-            recommendations.append(
+            pack.recommendations.data.append(
                 {
                     "content": f"The latest date in column '{column}' is more than one year old.",
                     "type": "Latest Date far in the past",
@@ -187,23 +174,26 @@ for column in df.columns:
 ############################ Compute Score Based on Average days_since_latest_date
 
 if date_columns_count > 0:
-    if "job" in pack_config and "compute_score_columns" in pack_config["job"]:
+    if "job" in pack.pack_config and "compute_score_columns" in pack.pack_config["job"]:
         # Get the list of columns to be used for computing the score
-        compute_score_columns = pack_config["job"]["compute_score_columns"]
+        compute_score_columns = pack.pack_config["job"]["compute_score_columns"]
     else:
         # If the list of columns is not specified, use all date columns
-        compute_score_columns = df.columns
+        compute_score_columns = pack.df_source.columns
 
     # Filter metrics_data to get only the days_since_latest_date for the columns to be used for computing the score
     days_since_latest_dates = [
         int(item["value"])
-        for item in metrics_data
-        if item["key"] == "days_since_latest_date" and item["scope"]["value"] in compute_score_columns
+        for item in pack.metrics.data
+        if item["key"] == "days_since_latest_date"
+        and item["scope"]["value"] in compute_score_columns
     ]
 
     if days_since_latest_dates:  # Only proceed if there are relevant columns
         # Calculate average days_since_latest_date
-        average_days_since_latest = sum(days_since_latest_dates) / len(days_since_latest_dates)
+        average_days_since_latest = sum(days_since_latest_dates) / len(
+            days_since_latest_dates
+        )
 
         # Compute score based on average_days_since_latest
         # Score is 1.0 if average_days_since_latest is 0,
@@ -211,25 +201,27 @@ if date_columns_count > 0:
         score = max(0.0, 1 - (average_days_since_latest / 365))
 
         # Add 'score' metric to metrics_data
-        metrics_data.append(
+        pack.metrics.data.append(
             {
                 "key": "score",
                 "value": str(round(score, 2)),
-                "scope": {"perimeter": "dataset", "value": source_config["name"]},
+                "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
             }
         )
     else:
-        print(f"No relevant date columns found in the specified scope: {compute_score_columns}. Metric scores will not be computed.")
+        print(
+            f"No relevant date columns found in the specified scope: {compute_score_columns}. Metric scores will not be computed."
+        )
 else:
     print("No date columns found. Metric scores will not be computed.")
 
 # Data to be written to JSON
-metrics_data.extend(
+pack.metrics.data.extend(
     [
         {
             "key": "date_columns_count",
             "value": str(date_columns_count),
-            "scope": {"perimeter": "dataset", "value": source_config["name"]},
+            "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
         },
     ]
 )
@@ -238,14 +230,14 @@ metrics_data.extend(
 
 if date_columns_count > 0:
     # Iterate through metrics_data and calculate timeliness_score for each column
-    for item in metrics_data:
+    for item in pack.metrics.data:
         if item["key"] == "days_since_latest_date":
             column_name = item["scope"]["value"]
             days_since_latest = int(item["value"])
             timeliness_score = calculate_timeliness_score(days_since_latest)
 
             # Append timeliness_score to metrics_data
-            metrics_data.append(
+            pack.metrics.data.append(
                 {
                     "key": "timeliness_score",
                     "value": str(round(timeliness_score, 2)),
@@ -253,12 +245,5 @@ if date_columns_count > 0:
                 }
             )
 
-# Writing recommendations to recommendations.json
-with open("recommendations.json", "w", encoding="utf-8") as f:
-    json.dump(recommendations, f, indent=4)
-
-# Writing data to metrics.json
-with open("metrics.json", "w", encoding="utf-8") as file:
-    json.dump(metrics_data, file, indent=4)
-
-print("metrics.json and recommendations.json files created successfully.")
+pack.metrics.save()
+pack.recommendations.save()

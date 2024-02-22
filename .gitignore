@@ -1,5 +1,8 @@
 **/__pycache__/
 poetry.lock
-profiling_pack/source_conf.json
+source_conf.json
+target_conf.json
 docker-compose.yml
-docker-compose.yml
+metrics.json
+recommendations.json
+schemas.json

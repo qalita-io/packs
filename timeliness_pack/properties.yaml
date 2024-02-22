@@ -3,5 +3,5 @@ icon: icon.png
 name: timeliness
 type: timeliness
 url: https://github.com/qalita-io/packs/tree/main/timeliness_pack
-version: 1.1.4
+version: 2.0.0
 visibility: public
