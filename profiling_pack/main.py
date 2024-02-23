@@ -10,6 +10,7 @@ import pandas as pd
 import os
 from ydata_profiling import ProfileReport
 from datetime import datetime
+from io import StringIO
 
 pack = Pack()
 pack.load_data("source")
@@ -22,7 +23,9 @@ print(f"Generating profile for {dataset_scope_name}")
 
 # Run the profiling report
 profile = ProfileReport(
-    pack.df_source, title=f"Profiling Report for {dataset_scope_name}"
+    pack.df_source,
+    title=f"Profiling Report for {dataset_scope_name}",
+    correlations={"auto": {"calculate": False}},
 )
 
 # Save the report to HTML
@@ -47,7 +50,8 @@ profile.to_file(json_file_name)
 
 try:
     with open(html_file_name, "r", encoding="utf-8") as f:
-        tables = pd.read_html(f.read())
+        html_content = f.read()
+        tables = pd.read_html(StringIO(html_content)) 
 except ValueError as e:
     print(f"No tables found in the HTML report: {e}")
     tables = [pd.DataFrame()]  # Create an empty DataFrame if no tables are found
@@ -121,9 +125,9 @@ for variable_name, attributes in variables_data.items():
 
 # Extract p_cells_missing value (as a decimal)
 df_missing = pd.DataFrame(pack.metrics.data)
-p_cells_missing_value = df_missing[
-    df_missing["key"] == "p_cells_missing"
-]["value"].values[0]
+p_cells_missing_value = df_missing[df_missing["key"] == "p_cells_missing"][
+    "value"
+].values[0]
 p_cells_missing = float(p_cells_missing_value)
 
 # Calculate the score
@@ -180,7 +184,7 @@ else:
     print("No alerts table found in the HTML report.")
     alerts_data = pd.DataFrame()  # Create an empty DataFrame if no alerts are found
 
-alerts_list_of_dicts = alerts_data.to_dict(orient='records')
+alerts_list_of_dicts = alerts_data.to_dict(orient="records")
 pack.recommendations.data = alerts_list_of_dicts
 
 ############################ Schemas
