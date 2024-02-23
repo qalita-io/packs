@@ -2,6 +2,7 @@ import json
 import pandas as pd
 from ydata_profiling import ProfileReport
 from qalita_core.pack import Pack
+from io import StringIO
 
 pack = Pack()
 pack.load_data("source")
@@ -24,7 +25,8 @@ profile.to_file(json_file_name)
 
 try:
     with open(html_file_name, "r", encoding="utf-8") as f:
-        tables = pd.read_html(f.read())
+        html_content = f.read()
+        tables = pd.read_html(StringIO(html_content)) 
 except ValueError as e:
     print(f"No tables found in the HTML report: {e}")
     tables = [pd.DataFrame()]  # Create an empty DataFrame if no tables are found
