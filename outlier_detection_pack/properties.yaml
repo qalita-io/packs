@@ -3,5 +3,5 @@ icon: icon.png
 name: outlier_detection
 type: reasonability
 url: https://github.com/qalita-io/packs/tree/main/outlier_detection_pack
-version: 2.0.0
+version: 2.0.1
 visibility: public
