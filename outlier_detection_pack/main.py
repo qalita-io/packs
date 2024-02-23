@@ -94,7 +94,7 @@ df = pack.df_source.drop(non_numeric_columns, axis=1)
 df = pd.concat([df, encoded_df.reset_index(drop=True)], axis=1)
 
 # Exclude id_columns from df before Multivariate Outlier Detection
-df_for_multivariate = pack.df_source.drop(columns=id_columns)
+df_for_multivariate = df.drop(columns=id_columns)
 
 # Multivariate Outlier Detection
 multivariate_outliers = pd.DataFrame()
