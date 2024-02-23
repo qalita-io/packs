@@ -3,5 +3,5 @@ icon: icon.png
 name: versioning
 type: version
 url: https://github.com/qalita-io/packs/tree/main/versioning_pack
-version: 2.0.0
+version: 2.0.1
 visibility: public
