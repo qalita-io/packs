@@ -1,8 +1,13 @@
 **/__pycache__/
 poetry.lock
-source_conf.json
 target_conf.json
 docker-compose.yml
 metrics.json
 recommendations.json
 schemas.json
+*.html
+*_report.json
+*.xlsx
+*_metrics.json
+*_recommendations.json
+*_schemas.json
