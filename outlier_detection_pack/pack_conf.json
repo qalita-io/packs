@@ -14,6 +14,12 @@
                 "chart_type": "text",
                 "display_title": true,
                 "justify": true
+            },
+            {
+                "metric_key": "total_outliers_count",
+                "chart_type": "text",
+                "display_title": true,
+                "justify": true
             }
         ],
         "scoped": [

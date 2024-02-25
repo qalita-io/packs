@@ -17,9 +17,10 @@ current_datetime=$(date +"%Y%m%d")
 process_data_pack() {
     local dataset="$1"
     local pack="$2"
-    # Define log file path
-    mkdir -p "${DATA_DIR}/${dataset}/output/${current_datetime}"
-    log_file="${DATA_DIR}/${dataset}/output/${current_datetime}/${dataset}_${pack}.log"
+    # Correctly determine dataset directory
+    local dataset_dir="${DATA_DIR}/${dataset}"
+    mkdir -p "${dataset_dir}/output/${current_datetime}"
+    log_file="${dataset_dir}/output/${current_datetime}/${dataset}_${pack}.log"
     # Redirect the outputs of this iteration to the log file
     {    
         echo "Processing Dataset: ${dataset} with Test Pack: ${pack}"
@@ -71,11 +72,13 @@ if [ "$#" -lt 1 ]; then
 fi
 
 PACK=$1
+ROOT_DIR=$(pwd)
+DATA_DIR="${ROOT_DIR}/data"
+
+# Check if the second argument is provided (non-empty)
 if [ -n "$2" ]; then
     DATASETS=("$2")
 else
-    ROOT_DIR=$(pwd)
-    DATA_DIR="${ROOT_DIR}/data"
     generate_test_datasets "${DATA_DIR}"
     DATASETS=("${TEST_DATASETS[@]}")
 fi

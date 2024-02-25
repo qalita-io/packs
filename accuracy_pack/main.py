@@ -11,37 +11,37 @@ if not float_columns.any():
     print("No float columns found. metrics.json will not be created.")
     raise
 
-total_proportion_score = 0  # Initialize total proportion score
+total_proportion_score = 0  # Initialize total proportion score used for original mean
 valid_columns_count = 0  # Count of columns that have at least one non-NaN value
+
+float_total_proportion_score = 0  # Initialize total proportion score for float_mean
+valid_points_count = 0  # Total count of valid data points (non-NaN) across all valid columns
 
 for column in float_columns:
     column_data = pack.df_source[column].dropna()
-
-    # Skip the column if it only contains NaN values
+    
     if column_data.empty:
         continue
-
+    
+    valid_data_points = len(column_data)  # Number of non-NaN data points in the current column
     decimals_count = column_data.apply(
         lambda x: len(str(x).split(".")[1]) if "." in str(x) else 0
     )
     max_decimals = decimals_count.max()
     most_common_decimals_series = decimals_count.mode()
-
-    # Handle the scenario when the mode() returns an empty series
+    
     if most_common_decimals_series.empty:
-        print(f"No common decimal count found for column {column}.")
-        most_common_decimals = 0
         proportion_score = 0
     else:
-        most_common_decimals = most_common_decimals_series[
-            0
-        ]  # Get the most common decimals count
-        proportion_score = decimals_count[
-            decimals_count == most_common_decimals
-        ].count() / len(decimals_count)
-
-    total_proportion_score += proportion_score  # Add proportion score to the total
+        most_common_decimals = most_common_decimals_series[0]
+        proportion_score = decimals_count[decimals_count == most_common_decimals].count() / valid_data_points
+    
+    total_proportion_score += proportion_score  # For original mean calculation
     valid_columns_count += 1  # Increment valid columns count
+    
+    # For float_mean calculation:
+    float_total_proportion_score += proportion_score * valid_data_points  
+    valid_points_count += valid_data_points  
 
     if max_decimals > 0:
         pack.metrics.data.append(
@@ -68,11 +68,21 @@ mean_proportion_score = (
     total_proportion_score / valid_columns_count if valid_columns_count > 0 else 0
 )
 
-# Add the mean proportion score to the precision data
+# Calculate the float mean proportion score considering all data points accurately
+float_mean_proportion_score = float_total_proportion_score / valid_points_count if valid_points_count > 0 else 0
+
+pack.metrics.data.append(
+    {
+        "key": "float_score", 
+        "value": str(round(float_mean_proportion_score, 2)),
+        "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
+    }
+)
+
 pack.metrics.data.append(
     {
         "key": "score",
-        "value": str(round(mean_proportion_score, 2)),  # Mean proportion score
+        "value": str(round(mean_proportion_score, 2)),
         "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
     }
 )
