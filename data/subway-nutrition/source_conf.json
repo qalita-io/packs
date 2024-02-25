@@ -1,0 +1,12 @@
+{
+    "config": {
+        "path": "../data/subway-nutrition/SubwayMenuNutrition.csv"
+    },
+    "description": "All items on Subway's Menu w/ Nutrition, Micronutrients, and Calorie Information",
+    "name": "Subway Nutrition",
+    "owner": "admin",
+    "reference": false,
+    "sensitive": true,
+    "type": "file",
+    "visibility": "public"
+}

@@ -7,28 +7,6 @@
     "charts": {
         "overview": [
             {
-                "metric_key": "n_cells_missing",
-                "chart_type": "area_chart",
-                "display_title": true
-            },
-            {
-                "metric_key": "n",
-                "chart_type": "area_chart",
-                "display_title": true
-            },
-            {
-                "metric_key": "n_cells_missing",
-                "chart_type": "text",
-                "display_title": true,
-                "justify": true
-            },
-            {
-                "metric_key": "p_cells_missing",
-                "chart_type": "text",
-                "display_title": true,
-                "justify": true
-            },
-            {
                 "metric_key": "score",
                 "chart_type": "text",
                 "display_title": true,

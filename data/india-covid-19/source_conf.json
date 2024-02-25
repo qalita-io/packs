@@ -1,0 +1,11 @@
+{
+    "config": {
+        "path": "../data/india-covid-19/Latest Covid-19 India Status.csv"
+    },
+    "description": "Covid-19 India Statewise Data as on January 17, 2023",
+    "name": "Latest Covid-19 India Statewise Data",
+    "reference": false,
+    "sensitive": false,
+    "type": "file",
+    "visibility": "public"
+}
