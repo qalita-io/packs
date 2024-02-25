@@ -120,7 +120,7 @@ else:
     pack.metrics.data.append(
         {
             "key": "score",
-            "value": score,
+            "value": str(round(score, 2)),
             "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
         }
     )
