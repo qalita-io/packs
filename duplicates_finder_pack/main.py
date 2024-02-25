@@ -10,6 +10,7 @@ pack.load_data("source")
 if (
     "job" in pack.pack_config
     and "compute_uniqueness_columns" in pack.pack_config["job"]
+    and len(pack.pack_config["job"]["compute_uniqueness_columns"]) > 0
 ):
     uniqueness_columns = pack.pack_config["job"]["compute_uniqueness_columns"]
 else:
@@ -19,11 +20,16 @@ else:
 
 # Step 1: Filter the DataFrame based on the specified columns
 print("Columns used for checking duplicates:", uniqueness_columns)
-df_subset = pack.df_source[uniqueness_columns]
+df_subset = pack.df_source[uniqueness_columns].copy()
+duplicates = df_subset.duplicated()
 total_rows = len(pack.df_source)
 
+print("total rows "+str(total_rows))
+
 # Step 2: Calculate the number of duplicate rows based on this subset
-total_duplicates = df_subset.duplicated().sum()
+total_duplicates = duplicates.sum()
+
+print("total duplicates "+str(total_duplicates))
 
 # Calculate the scoped duplication score
 duplication_score = round(total_duplicates / total_rows if total_rows > 0 else 0, 2)
@@ -35,7 +41,7 @@ score = 1 - duplication_score
 pack.metrics.data.append(
     {
         "key": "score",
-        "value": score,
+        "value": str(round(score, 2)),
         "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
     }
 )
@@ -69,7 +75,7 @@ if (
 if score < 0.9:
 
     recommendation = {
-        "content": f"dataset '{pack.source_config['name']}' has a duplication rate of {duplication_score*100}%. on the scope {uniqueness_columns} .",
+        "content": f"dataset '{pack.source_config['name']}' has a duplication rate of {duplication_score*100}%. on the scope {uniqueness_columns.to_list()} .",
         "type": "Duplicates",
         "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
         "level": determine_recommendation_level(duplication_score),
@@ -84,25 +90,13 @@ pack.recommendations.save()
 # Step 1: Retrieve 'id_columns' from pack_config
 id_columns = pack.pack_config.get("job", {}).get("id_columns", [])
 
-# Check if uniqueness_columns is empty and handle accordingly
-if not uniqueness_columns:
-    print("No columns specified for checking duplicates. Using all columns.")
-    uniqueness_columns = (
-        pack.df_source.columns.tolist()
-    )  # Use all columns if none are specified
-
 # Step 2: Identify duplicated rows
-duplicated_rows = pack.df_source[
-    pack.df_source.duplicated(subset=uniqueness_columns, keep=False)
-]
+duplicated_rows = pack.df_source[duplicates]
 
 # Check if there are any duplicates
-if duplicated_rows.empty:
+if duplicates.empty:
     print("No duplicates found. No report will be generated.")
 else:
-    # If there are duplicates, proceed with sorting and exporting
-    duplicated_rows = duplicated_rows.sort_values(by=uniqueness_columns)
-
     # Step 3: Set index or create 'index' column for the Excel export
     if id_columns:
         # Ensure all id_columns are in the DataFrame columns

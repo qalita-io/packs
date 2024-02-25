@@ -1,5 +1,15 @@
 from qalita_core.pack import Pack
-from qalita_core.utils import determine_recommendation_level
+
+
+# Define a function to determine recommendation level based on the proportion of outliers
+def determine_recommendation_level(proportion_outliers):
+    if proportion_outliers > 0.5:  # More than 50% of data are outliers
+        return "high"
+    elif proportion_outliers > 0.3:  # More than 30% of data are outliers
+        return "warning"
+    else:
+        return "info"
+
 
 import os
 import numpy as np
@@ -14,7 +24,9 @@ pack.load_data("source")
 # Fill missing values with mean
 for column in pack.df_source.columns:
     if np.issubdtype(pack.df_source[column].dtype, np.number):
-        pack.df_source[column] = pack.df_source[column].fillna(pack.df_source[column].mean())
+        pack.df_source[column] = pack.df_source[column].fillna(
+            pack.df_source[column].mean()
+        )
 
 # Identify columns that still contain NaN values after filling
 columns_with_nan = [
@@ -65,7 +77,7 @@ for column in [col for col in pack.df_source.columns if col not in id_columns]:
         )
 
         # Identify outliers based on the inlier score and threshold
-        outliers = pack.df_source[[column]][inlier_score < outlier_threshold]
+        outliers = pack.df_source[[column]][inlier_score < outlier_threshold].copy()
         univariate_outliers[column] = outliers
 
         outlier_count = len(outliers)
@@ -76,6 +88,23 @@ for column in [col for col in pack.df_source.columns if col not in id_columns]:
                 "scope": {"perimeter": "column", "value": column},
             }
         )
+
+        if outlier_count > 0:
+            pack.recommendations.data.append(
+                {
+                    "content": f"Column '{column}' has {outlier_count} outliers.",
+                    "type": "Outliers",
+                    "scope": {"perimeter": "column", "value": column},
+                    "level": determine_recommendation_level(
+                        outlier_count / len(pack.df_source[[column]])
+                    ),
+                }
+            )
+
+
+total_univariate_outliers = sum(
+    len(outliers) for outliers in univariate_outliers.values()
+)
 
 # Identify non-numeric columns
 non_numeric_columns = pack.df_source.select_dtypes(exclude=[np.number]).columns
@@ -129,12 +158,24 @@ try:
     pack.metrics.data.append(
         {
             "key": "score",
-            "value": round(inlier_score.mean().item(), 2),
+            "value": str(round(inlier_score.mean().item(), 2)),
             "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
         }
     )
 except ValueError as e:
     print(f"Error fitting the model: {e}")
+
+
+total_multivariate_outliers = len(multivariate_outliers)
+# total_outliers_count = total_univariate_outliers + total_multivariate_outliers
+total_outliers_count = total_univariate_outliers
+pack.metrics.data.append(
+    {
+        "key": "total_outliers_count",
+        "value": total_outliers_count,
+        "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
+    }
+)
 
 pack.metrics.save()
 
@@ -180,11 +221,20 @@ if (
         "content": f"The dataset '{pack.source_config['name']}' has a normality score of {dataset_normality_score*100}%.",
         "type": "Outliers",
         "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
-        "level": determine_recommendation_level(
-            1 - dataset_normality_score
-        ),  # Convert percentage to proportion
+        "level": determine_recommendation_level(1 - dataset_normality_score),
     }
     pack.recommendations.data.append(recommendation)
+
+pack.recommendations.data.append(
+    {
+        "content": f"The dataset '{pack.source_config['name']}' has a total of {total_outliers_count} outliers. Check them in output file.",
+        "type": "Outliers",
+        "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
+        "level": determine_recommendation_level(
+            total_outliers_count / len(pack.df_source)
+        ),
+    }
+)
 
 pack.recommendations.save()
 ####################### Export
@@ -192,23 +242,39 @@ pack.recommendations.save()
 # Step 1: Compile Univariate Outliers
 all_univariate_outliers = pd.DataFrame()
 for column, outliers in univariate_outliers.items():
+    # Select only the rows that are outliers, preserving the index
     outliers_with_id = pack.df_source.loc[outliers.index, id_columns + [column]].copy()
+    # Create a new 'value' column to store the outlier values
+    outliers_with_id["value"] = outliers_with_id[column]
+    # Add column name as 'OutlierAttribute'
     outliers_with_id["OutlierAttribute"] = column
-    outliers_with_id["index"] = outliers_with_id.index  # Capture the original index
+    # Optionally, if you want to keep the original index as a column
+    outliers_with_id["index"] = outliers_with_id.index
+    # Drop the original value columns as we have captured it in 'value'
+    outliers_with_id = outliers_with_id[
+        id_columns + ["index", "OutlierAttribute", "value"]
+    ]
+    # Concatenate to the all_univariate_outliers DataFrame
     all_univariate_outliers = pd.concat(
         [all_univariate_outliers, outliers_with_id], ignore_index=True
     )
 
+# Step 1: Compile Univariate Outliers
+all_univariate_outliers_simple = pd.DataFrame()
+for column, outliers in univariate_outliers.items():
+    outliers_with_id = pack.df_source.loc[outliers.index, id_columns + [column]].copy()
+    outliers_with_id["OutlierAttribute"] = column
+    outliers_with_id["index"] = outliers_with_id.index
+    all_univariate_outliers_simple = pd.concat(
+        [all_univariate_outliers_simple, outliers_with_id], ignore_index=True
+    )
+
 # Rearrange columns for all_univariate_outliers
+# Ensure the 'value' column is correctly placed if needed here
 id_and_other_columns = (
     ["index"]
     + id_columns
-    + ["OutlierAttribute"]
-    + [
-        col
-        for col in all_univariate_outliers.columns
-        if col not in ["index"] + id_columns + ["OutlierAttribute"]
-    ]
+    + ["OutlierAttribute", "value"]  # Include "value" in the list
 )
 all_univariate_outliers = all_univariate_outliers[id_and_other_columns]
 
@@ -234,7 +300,7 @@ multivariate_outliers = multivariate_outliers[id_and_other_columns]
 
 # Step 3: Combine Data
 all_outliers = pd.concat(
-    [all_univariate_outliers, multivariate_outliers], ignore_index=True
+    [all_univariate_outliers_simple, multivariate_outliers], ignore_index=True
 )
 
 # Ensure that all_outliers has the same column order
@@ -261,13 +327,3 @@ if pack.source_config["type"] == "file":
         all_outliers.to_excel(writer, sheet_name="All Outliers", index=False)
 
     print(f"Outliers report saved to {excel_file_path}")
-
-
-# Define a function to determine recommendation level based on the proportion of outliers
-def determine_recommendation_level(proportion_outliers):
-    if proportion_outliers > 0.5:  # More than 20% of data are outliers
-        return "high"
-    elif proportion_outliers > 0.3:  # More than 10% of data are outliers
-        return "warning"
-    else:
-        return "info"
