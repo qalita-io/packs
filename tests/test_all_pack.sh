@@ -35,36 +35,50 @@ generate_test_packs "${ROOT_DIR}"
 # Call the function to generate the TEST_DATASETS array
 generate_test_datasets "${DATA_DIR}"
 
+current_datetime=$(date +"%Y%m%d")
+
 # Iterate over each dataset
 for dataset in "${TEST_DATASETS[@]}"; do
     # For each dataset, iterate over each test pack
     for pack in "${TEST_PACKS[@]}"; do
-        echo "Processing Dataset: ${dataset} with Test Pack: ${pack}"
+        mkdir -p "${DATA_DIR}/${dataset}/output/${current_datetime}"
+        log_file="${DATA_DIR}/${dataset}/output/${current_datetime}/${dataset}_${pack}.log"
+        # Redirect the outputs of this iteration to the log file
+        {
+            echo "Processing Dataset: ${dataset} with Test Pack: ${pack}"
 
-        # 1. Copy source_conf.json from the dataset directory into the current test pack directory
-        cp "${DATA_DIR}/${dataset}/source_conf.json" "${ROOT_DIR}/${pack}"
+            # 1. Copy source_conf.json from the dataset directory into the current test pack directory
+            cp "${DATA_DIR}/${dataset}/source_conf.json" "${ROOT_DIR}/${pack}"
 
-        # 2. Change to the test pack directory
-        cd "${ROOT_DIR}/${pack}"
+            # 2. Change to the test pack directory
+            cd "${ROOT_DIR}/${pack}"
 
-        # 3. Execute the run.sh script
-        if [ -x "./run.sh" ]; then
-            ./run.sh
-        else
-            echo "run.sh is not executable or not found in $pack. Skipping."
-            continue
-        fi
+            # 3. Execute the run.sh script
+            if [ -x "./run.sh" ]; then
+                ./run.sh
+            else
+                echo "run.sh is not executable or not found in $pack. Skipping."
+                continue
+            fi
 
-        # 4. Once processing is done, copy the result files back into the dataset directory
-        cp metrics.json "${DATA_DIR}/${dataset}/${pack}_metrics.json"
-        cp recommendations.json "${DATA_DIR}/${dataset}/${pack}_recommendations.json"
-        cp schemas.json "${DATA_DIR}/${dataset}/${pack}_schemas.json"
+            # 4. Once processing is done, copy the result files back into the dataset directory
+            cp metrics.json "${DATA_DIR}/${dataset}/output/${current_datetime}/${pack}_metrics.json"
+            cp recommendations.json "${DATA_DIR}/${dataset}/output/${current_datetime}/${pack}_recommendations.json"
+            cp schemas.json "${DATA_DIR}/${dataset}/output/${current_datetime}/${pack}_schemas.json"
+            cp *.html "${DATA_DIR}/${dataset}/output/${current_datetime}/"
+            cp *.xlsx "${DATA_DIR}/${dataset}/output/${current_datetime}/"
+            cp *.csv "${DATA_DIR}/${dataset}/output/${current_datetime}/"
 
-        # 5. Print a completion message (optional)
-        echo "Completed: ${dataset} with ${pack}"
+            # 6. Cleanup
+            # Remove all .json files except pack_conf.json
+            find "${ROOT_DIR}/${pack}/" -type f -name "*.json" ! -name "pack_conf.json" -exec rm {} +
 
-        # 6. Cleanup
-        rm "${ROOT_DIR}/${pack}/source_conf.json" "${ROOT_DIR}/${pack}/metrics.json" "${ROOT_DIR}/${pack}/recommendations.json" "${ROOT_DIR}/${pack}/schemas.json" || echo "Error removing source_conf.json from $pack"
+            # Remove all .html files
+            find "${ROOT_DIR}/${pack}/" -type f -name "*.html" -exec rm {} +
+
+            echo "Completed: ${dataset} with ${pack}"
+            echo "Cleanup done for $pack."
+        } &> "${log_file}"
 
         # Return to the root directory for the next iteration
         cd "${ROOT_DIR}"

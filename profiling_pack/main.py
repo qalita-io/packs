@@ -251,6 +251,14 @@ else:
 #         }
 #     )
 
+################## Remove unwanted metrics or recommendations
+    
+unwanted_keys = ["histogram"]
+pack.metrics.data = [item for item in pack.metrics.data if item.get("key") not in unwanted_keys]
+
+unwanted_keys = ["Unsupported"]
+pack.recommendations.data = [item for item in pack.recommendations.data if item.get("type") not in unwanted_keys]
+
 pack.metrics.save()
 pack.recommendations.save()
 pack.schemas.save()

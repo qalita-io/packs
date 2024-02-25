@@ -11,3 +11,4 @@ schemas.json
 *_metrics.json
 *_recommendations.json
 *_schemas.json
+*.log
