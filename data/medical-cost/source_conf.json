@@ -1,0 +1,11 @@
+{
+    "config": {
+        "path": "../data/medical-cost/insurance.csv"
+    },
+    "description": "Insurance Forecast by using Linear Regression",
+    "name": "Medical Cost Personal Datasets",
+    "reference": false,
+    "sensitive": false,
+    "type": "file",
+    "visibility": "public"
+}
