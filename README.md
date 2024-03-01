@@ -4,6 +4,8 @@
   <img width="250px" height="auto" src="https://platform.qalita.io/logo.svg" style="max-width:250px;"/>
 </p>
 
+[![CI Pipeline](https://github.com/qalita-io/packs/actions/workflows/ci.yml/badge.svg)](https://github.com/qalita-io/packs/actions/workflows/ci.yml)
+
 Welcome to QALITA's public packs repository. All packs in this repository are open source and free to use. You can use these packs to create your own QALITA projects or to contribute to the QALITA community.
 
 ## What is a pack?
