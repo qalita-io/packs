@@ -10,13 +10,13 @@ pack.load_data("target")
 
 
 # Checking if the columns exist in the DataFrames
-compare_col_list = pack.pack_config["job"]["compare_col_list"]
-id_columns = pack.pack_config["job"]["id_columns"]
+compare_col_list = pack.pack_config["job"].get("compare_col_list", [])
+id_columns = pack.pack_config["job"].get("id_columns", [])
 abs_tol = pack.pack_config["job"].get("abs_tol", 0.0001)
 rel_tol = pack.pack_config["job"].get("rel_tol", 0)
 
 # Create an intersection of source and target columns if compare_col_list is empty
-if not compare_col_list:
+if compare_col_list == []:
     compare_col_list = list(
         set(pack.df_source.columns).intersection(set(pack.df_target.columns))
     )
@@ -36,6 +36,9 @@ if missing_in_target:
 
 # Combine compare_col_list and id_columns while removing duplicates
 combined_columns_list = list(dict.fromkeys(compare_col_list + id_columns))
+
+if len(id_columns) == 0 :
+    id_columns = compare_col_list
 
 # Creating subsets for source and target data with no repeated columns
 df_source_subset = pack.df_source[combined_columns_list]

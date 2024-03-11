@@ -20,6 +20,11 @@
                 "chart_type": "text",
                 "display_title": true,
                 "justify": true
+            },
+            {
+                "metric_key": "outliers_table",
+                "chart_type": "table",
+                "display_title": true
             }
         ],
         "scoped": [
