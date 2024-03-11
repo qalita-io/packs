@@ -17,7 +17,7 @@
                 "justify": true
             },
             {
-                "metric_key": "recommendation_levels",
+                "metric_key": "recommendation_levels_mismatches",
                 "chart_type": "recommendation_level_indicator",
                 "display_title": true
             },
