@@ -1,36 +1,65 @@
 {
-    "job": {
-        "compare_col_list": [],
-        "id_columns": [],
-        "abs_tol": 0.0001,
-        "rel_tol": 0,
-        "source": {
-            "skiprows": 0
-        }
-    },
-    "charts": {
-        "overview": [
-            {
-                "metric_key": "score",
-                "chart_type": "text",
-                "display_title": true,
-                "justify": true
-            },
-            {
-                "metric_key": "recommendation_levels",
-                "chart_type": "recommendation_level_indicator",
-                "display_title": true
-            },
-            {
-                "metric_key": "check_column",
-                "chart_type": "check_table",
-                "display_title": true
-            },
-            {
-                "metric_key": "mismatches_table",
-                "chart_type": "table",
-                "display_title": true
-            }
-        ]
+  "job": {
+    "compare_col_list": [],
+    "id_columns": [],
+    "abs_tol": 0.0001,
+    "rel_tol": 0,
+    "source": {
+      "skiprows": 0
     }
+  },
+  "charts": {
+    "overview": [
+      {
+        "metric_key": "score",
+        "chart_type": "text",
+        "tooltip": {
+          "title": "Comparison Score [Higher is better]",
+          "content": "Proportion of data in source that matches the target."
+        },
+        "display_title": true,
+        "justify": true
+      },
+      {
+        "metric_key": "precision",
+        "chart_type": "text",
+        "tooltip": {
+          "title": "Precision [Higher is better]",
+          "content": "The portion of rows in the target that are correctly represented in the source dataset"
+        },
+        "display_title": true,
+        "justify": true
+      },
+      {
+        "metric_key": "recall",
+        "chart_type": "text",
+        "tooltip": {
+          "title": "Recall [Higher is better]",
+          "content": "The portion of rows in the source that are correctly represented in the target dataset"
+        },
+        "display_title": true,
+        "justify": true
+      },
+      {
+        "metric_key": "score",
+        "chart_type": "text",
+        "display_title": true,
+        "justify": true
+      },
+      {
+        "metric_key": "recommendation_levels_mismatches",
+        "chart_type": "recommendation_level_indicator",
+        "tooltip": {
+          "title": "Recommendation level's importance mapping",
+          "content": "Gives the recommendation level for proportions of mismatches"
+        },
+        "display_title": true
+      },
+      {
+        "metric_key": "mismatches_table",
+        "chart_type": "table",
+        "display_title": true
+      }
+    ]
+  }
 }

@@ -10,13 +10,13 @@ pack.load_data("target")
 
 
 # Checking if the columns exist in the DataFrames
-compare_col_list = pack.pack_config["job"]["compare_col_list"]
-id_columns = pack.pack_config["job"]["id_columns"]
+compare_col_list = pack.pack_config["job"].get("compare_col_list", [])
+id_columns = pack.pack_config["job"].get("id_columns", [])
 abs_tol = pack.pack_config["job"].get("abs_tol", 0.0001)
 rel_tol = pack.pack_config["job"].get("rel_tol", 0)
 
 # Create an intersection of source and target columns if compare_col_list is empty
-if not compare_col_list:
+if compare_col_list == []:
     compare_col_list = list(
         set(pack.df_source.columns).intersection(set(pack.df_target.columns))
     )
@@ -36,6 +36,9 @@ if missing_in_target:
 
 # Combine compare_col_list and id_columns while removing duplicates
 combined_columns_list = list(dict.fromkeys(compare_col_list + id_columns))
+
+if len(id_columns) == 0:
+    id_columns = compare_col_list
 
 # Creating subsets for source and target data with no repeated columns
 df_source_subset = pack.df_source[combined_columns_list]
@@ -226,19 +229,38 @@ pack.metrics.data.extend(
     ]
 )
 
-
 # Extracting column labels
 columnLabels = df_all_mismatch.columns.tolist()
 
-# Converting the DataFrame into the desired format without row labels
+# Dictionary to map the old suffix to the new one
+suffix_mapping = {"_df1": "_source", "_df2": "_target"}
+
+# Revise the loop to correctly process replacement without duplication
+new_columnLabels = [
+    (
+        col
+        if not any(col.endswith(suffix) for suffix in suffix_mapping.keys())
+        else next(
+            col.replace(suffix, replacement)
+            for suffix, replacement in suffix_mapping.items()
+            if col.endswith(suffix)
+        )
+    )
+    for col in columnLabels
+]
+
+# Assuming `df_all_mismatch` is your DataFrame, rename its columns with the new labels
+df_all_mismatch.columns = new_columnLabels
+
+# Since you've updated column names, you don't need to change the way you convert the DataFrame
 data_formatted = [
     [{"value": row[col]} for col in df_all_mismatch.columns]
     for index, row in df_all_mismatch.iterrows()
 ]
 
-# The formatted data structure, now without rowLabels
+# The formatted data structure, now with renamed labels
 format_structure = {
-    "columnLabels": columnLabels,
+    "columnLabels": new_columnLabels,  # Use the new column labels
     "data": data_formatted,
 }
 
@@ -247,12 +269,7 @@ pack.metrics.data.extend(
     [
         {
             "key": "recommendation_levels_mismatches",
-            "value": {"info": "<=0.5", "warning": ">0.5", "high": ">0.8"},
-            "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
-        },
-        {
-            "key": "check_column",
-            "value": [combined_columns_list],
+            "value": {"info": "0", "warning": "0.5", "high": "0.8"},
             "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
         },
         {

@@ -177,7 +177,6 @@ pack.metrics.data.append(
     }
 )
 
-pack.metrics.save()
 
 # Define a threshold for considering a data point as an outlier
 normality_threshold = pack.pack_config["job"][
@@ -277,6 +276,35 @@ id_and_other_columns = (
     + ["OutlierAttribute", "value"]  # Include "value" in the list
 )
 all_univariate_outliers = all_univariate_outliers[id_and_other_columns]
+
+
+# Extracting column labels
+columnLabels = all_univariate_outliers.columns.tolist()
+
+# Converting the DataFrame into the desired format without row labels
+data_formatted = [
+    [{"value": row[col]} for col in all_univariate_outliers.columns]
+    for index, row in all_univariate_outliers.iterrows()
+]
+
+# The formatted data structure, now without rowLabels
+format_structure = {
+    "columnLabels": columnLabels,
+    "data": data_formatted,
+}
+
+# Append the precision, recall, and F1 score to the metrics
+pack.metrics.data.extend(
+    [
+        {
+            "key": "outliers_table",
+            "value": format_structure,
+            "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
+        },
+    ]
+)
+
+pack.metrics.save()
 
 # Step 2: Compile Multivariate Outliers
 multivariate_outliers["index"] = (
