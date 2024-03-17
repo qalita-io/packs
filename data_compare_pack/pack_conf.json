@@ -13,6 +13,36 @@
       {
         "metric_key": "score",
         "chart_type": "text",
+        "tooltip": {
+          "title": "Comparison Score [Higher is better]",
+          "content": "Proportion of data in source that matches the target."
+        },
+        "display_title": true,
+        "justify": true
+      },
+      {
+        "metric_key": "precision",
+        "chart_type": "text",
+        "tooltip": {
+          "title": "Precision [Higher is better]",
+          "content": "The portion of rows in the target that are correctly represented in the source dataset"
+        },
+        "display_title": true,
+        "justify": true
+      },
+      {
+        "metric_key": "recall",
+        "chart_type": "text",
+        "tooltip": {
+          "title": "Recall [Higher is better]",
+          "content": "The portion of rows in the source that are correctly represented in the target dataset"
+        },
+        "display_title": true,
+        "justify": true
+      },
+      {
+        "metric_key": "score",
+        "chart_type": "text",
         "display_title": true,
         "justify": true
       },
