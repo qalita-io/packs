@@ -56,11 +56,6 @@
         "display_title": true
       },
       {
-        "metric_key": "check_column",
-        "chart_type": "check_table",
-        "display_title": true
-      },
-      {
         "metric_key": "mismatches_table",
         "chart_type": "table",
         "display_title": true

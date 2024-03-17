@@ -273,11 +273,6 @@ pack.metrics.data.extend(
             "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
         },
         {
-            "key": "check_column",
-            "value": [combined_columns_list],
-            "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
-        },
-        {
             "key": "mismatches_table",
             "value": format_structure,
             "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
