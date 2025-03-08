@@ -1,0 +1,6 @@
+description: Checks with Soda Check Library
+icon: icon.png
+name: soda
+type: validity
+version: 1.0.0
+visibility: public

@@ -1,0 +1,63 @@
+{
+    "job": {
+        "source": {
+            "skiprows": 0
+        }
+    },
+    "charts": {
+        "overview": [
+            {
+                "metric_key": "check_passed",
+                "chart_type": "text",
+                "display_title": true,
+                "justify": true
+            },
+            {
+                "metric_key": "check_failed",
+                "chart_type": "text",
+                "display_title": true,
+                "justify": true
+            },
+            {
+                "metric_key": "check_passed",
+                "chart_type": "area_chart",
+                "display_title": true
+            },
+            {
+                "metric_key": "check_failed",
+                "chart_type": "area_chart",
+                "display_title": true
+            },
+            {
+                "metric_key": "score",
+                "chart_type": "text",
+                "display_title": true,
+                "justify": true
+            }
+        ],
+        "scoped": [
+            {
+                "metric_key": "check_completion_score",
+                "chart_type": "text",
+                "display_title": true,
+                "justify": true
+            },
+            {
+                "metric_key": "check_completion_score",
+                "chart_type": "spark_area_chart",
+                "display_title": false
+            },
+            {
+                "metric_key": "invalid_count",
+                "chart_type": "text",
+                "display_title": true,
+                "justify": true
+            },
+            {
+                "metric_key": "invalid_count",
+                "chart_type": "spark_area_chart",
+                "display_title": false
+            }
+        ]
+    }
+}

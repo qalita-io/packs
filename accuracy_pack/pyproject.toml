@@ -2,7 +2,7 @@
 name = "accuracy-pack"
 version = "2.0.0"
 description = "Compute accuracy metrics of source"
-authors = ["qalita"]
+authors = ["QALITA SAS <contact@qalita.io>"]
 license = "Proprietary"
 readme = "README.md"
 

@@ -1,0 +1,6 @@
+for each dataset T:
+  datasets:
+    - include %
+  checks:
+    - row_count > 0:
+        name: "Dataset vide"

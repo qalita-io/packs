@@ -2,7 +2,7 @@
 name = "profiling-pack"
 version = "1.0.0"
 description = "Pack profiling gives general information about the source"
-authors = ["qalita"]
+authors = ["QALITA SAS <contact@qalita.io>"]
 license = "Apache-2.0"
 readme = "README.md"
 

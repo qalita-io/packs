@@ -2,7 +2,7 @@
 name = "data-compare-pack"
 version = "1.0.0"
 description = "Pack data-compare compare 2 sources"
-authors = ["qalita"]
+authors = ["QALITA SAS <contact@qalita.io>"]
 license = "Proprietary"
 readme = "README.md"
 
