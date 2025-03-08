@@ -2,7 +2,7 @@
 name = "duplicates-finder-pack"
 version = "1.0.0"
 description = "Pack duplicates-finder find and count duplicates data"
-authors = ["qalita"]
+authors = ["QALITA SAS <contact@qalita.io>"]
 license = "Proprietary"
 readme = "README.md"
 

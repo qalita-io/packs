@@ -1,7 +1,7 @@
 # Qalita Public Packs
 
 <p align="center">
-  <img width="250px" height="auto" src="https://platform.qalita.io/logo.svg" style="max-width:250px;"/>
+  <img width="250px" height="auto" src="https://cloud.platform.qalita.io/logo.svg" style="max-width:250px;"/>
 </p>
 
 [![CI Pipeline](https://github.com/qalita-io/packs/actions/workflows/ci.yml/badge.svg)](https://github.com/qalita-io/packs/actions/workflows/ci.yml)
@@ -12,7 +12,7 @@ Welcome to QALITA's public packs repository. All packs in this repository are op
 
 A pack is a collection of assets that can be used to perform a specific type of analysis.
 
-Checkout [Documentation](https://doc.platform.qalita.io/user-guides/data-engineering/pack) if  you want to know more about packs.
+Checkout [Documentation](https://doc.cloud.platform.qalita.io/user-guides/data-engineering/pack) if  you want to know more about packs.
 
 ## How to use a pack?
 

@@ -2,7 +2,7 @@
 name = "outlier_detection-pack"
 version = "1.0.0"
 description = "outlier_detection pack"
-authors = ["qalita"]
+authors = ["QALITA SAS <contact@qalita.io>"]
 license = "Proprietary"
 readme = "README.md"
 
