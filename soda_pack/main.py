@@ -5,8 +5,17 @@ from qalita_core.utils import (
     replace_whitespaces_with_underscores,
 )
 
+# --- Chargement des données ---
+# Pour un fichier : pack.load_data("source")
+# Pour une base : pack.load_data("source", table_or_query="ma_table")
 pack = Pack()
-pack.load_data("source")
+if pack.source_config.get("type") == "database":
+    table_or_query = pack.source_config.get("config", {}).get("table_or_query")
+    if not table_or_query:
+        raise ValueError("Pour une source de type 'database', il faut spécifier 'table_or_query' dans la config.")
+    pack.load_data("source", table_or_query=table_or_query)
+else:
+    pack.load_data("source")
 
 # Dictionary to hold the association between slugified and original column names
 df, column_name_association = replace_whitespaces_with_underscores(pack.df_source)

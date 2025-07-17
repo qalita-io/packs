@@ -4,3 +4,19 @@ name: soda
 type: validity
 version: 1.0.0
 visibility: public
+
+compatible_sources:
+  - mysql
+  - postgresql
+  - sqlite
+  - mongodb
+  - oracle
+  - s3
+  - gcs
+  - azure_blob
+  - hdfs
+  - sftp
+  - http
+  - https
+  - file
+  - folder

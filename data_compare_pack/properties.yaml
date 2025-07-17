@@ -5,3 +5,19 @@ type: consistency
 url: https://github.com/qalita-io/packs/tree/main/data_compare_pack
 version: 2.0.21
 visibility: public
+
+compatible_sources:
+  - mysql
+  - postgresql
+  - sqlite
+  - mongodb
+  - oracle
+  - s3
+  - gcs
+  - azure_blob
+  - hdfs
+  - sftp
+  - http
+  - https
+  - file
+  - folder
