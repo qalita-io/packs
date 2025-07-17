@@ -4,8 +4,17 @@ from ydata_profiling import ProfileReport
 from qalita_core.pack import Pack
 from io import StringIO
 
+# --- Chargement des données ---
+# Pour un fichier : pack.load_data("source")
+# Pour une base : pack.load_data("source", table_or_query="ma_table")
 pack = Pack()
-pack.load_data("source")
+if pack.source_config.get("type") == "database":
+    table_or_query = pack.source_config.get("config", {}).get("table_or_query")
+    if not table_or_query:
+        raise ValueError("Pour une source de type 'database', il faut spécifier 'table_or_query' dans la config.")
+    pack.load_data("source", table_or_query=table_or_query)
+else:
+    pack.load_data("source")
 
 ########################### Profiling and Aggregating Results
 dataset_name = pack.source_config["name"]
