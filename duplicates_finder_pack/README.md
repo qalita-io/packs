@@ -1,38 +1,33 @@
-# Duplicates Finder
+## Duplicates Finder Pack
 
-Duplicates finder searches for duplicates data and computes metrics.
+### Overview
+Detects duplicate rows per dataset and computes duplication metrics and a dataset score. Supports multiple tables from databases and single DataFrames from files.
 
-## Input 📥
+### How it works
+- Loads the source as a DataFrame or list of DataFrames.
+- For each dataset, selects `job.compute_uniqueness_columns` or uses all columns; counts duplicate rows and computes `duplication_score` and `score = 1 - duplication_score`.
+- Emits recommendations if the score is below a threshold (implicit in the pack logic).
 
-### Configuration ⚙️
+### Supported sources
+- Files: csv, xlsx
+- Databases: any SQLAlchemy-compatible
 
-| Name                              | Type   | Required | Default | Description                                              |
-| --------------------------------- | ------ | -------- | ------- | -------------------------------------------------------- |
-| `jobs.source.skiprows`            | `int`  | no       | `0`     | The number of rows to skip at the beginning of the file. |
-| `jobs.compute_uniqueness_columns` | `list` | no       | `[]`    | The list of columns to compute the uniqueness score.     |
-| `jobs.id_columns`                 | `list` | no       | `[]`    | The list of columns to use as identifier.                |
+### Configuration
+- `job.source.skiprows` (int, default 0)
+- `job.compute_uniqueness_columns` (list, optional)
+- `job.id_columns` (list, optional; used for export indexing)
 
-### Source type compatibility 🧩
+### Usage
+1) Configure `source_conf.json` and `pack_conf.json`.
+2) For databases, set `table_or_query` to string, list, or `*`.
+3) Run the pack.
 
-This pack is compatible with **files** 📁 (``csv``, ``xslx``) and **databases** 🖥️ (``MySQL``, ``PostgreSQL``).
+### Outputs
+- `metrics.json`: includes per-dataset `score` and `duplicates` counts.
+- For file sources: `{YYYYMMDD}_duplicates_finder_report_{dataset}.xlsx` for the first dataset, listing duplicate rows with identifiers.
 
-## Analysis 🕵️‍♂️
+### Multi-table handling and scopes
+- Each table is treated as a dataset; dataset names are taken from `table_or_query` or `{source_name}_{index}`. Scopes are dataset-specific and include `parent_scope` for databases when relevant.
 
-- **Duplication Score Calculation**: Calculates a duplication score based on the number of duplicate rows in a dataset, helping you understand the extent of data redundancy.
-
-| Name         | Description          | Scope   | Type    |
-| ------------ | -------------------- | ------- | ------- |
-| `score`      | Duplication score    | Dataset | `float` |
-| `duplicates` | Number of duplicates | Dataset | `int`   |
-
-## Output 📤
-
-### Report 📊
-
-The report exports the duplicated data by adding the id column, and groupy by duplicates and sorting them.
-
-Filename is `{current_date}_duplicates_finder_report_{source_config["name"]}_.xlsx`
-
-# Contribute 💡
-
-[This pack is part of Qalita Open Source Assets (QOSA) and is open to contribution. You can help us improve this pack by forking it and submitting a pull request here.](https://github.com/qalita-io/packs) 👥🚀
+### Contribute
+This pack is part of Qalita Open Source Assets (QOSA). Contributions are welcome: https://github.com/qalita-io/packs.

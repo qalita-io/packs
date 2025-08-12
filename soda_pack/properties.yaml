@@ -1,22 +1,21 @@
+compatible_sources:
+- mysql
+- postgresql
+- sqlite
+- mongodb
+- oracle
+- s3
+- gcs
+- azure_blob
+- hdfs
+- sftp
+- http
+- https
+- file
+- folder
 description: Checks with Soda Check Library
 icon: icon.png
 name: soda
 type: validity
-version: 1.0.0
+version: 1.0.3
 visibility: public
-
-compatible_sources:
-  - mysql
-  - postgresql
-  - sqlite
-  - mongodb
-  - oracle
-  - s3
-  - gcs
-  - azure_blob
-  - hdfs
-  - sftp
-  - http
-  - https
-  - file
-  - folder

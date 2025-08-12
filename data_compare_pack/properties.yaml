@@ -1,23 +1,22 @@
+compatible_sources:
+- mysql
+- postgresql
+- sqlite
+- mongodb
+- oracle
+- s3
+- gcs
+- azure_blob
+- hdfs
+- sftp
+- http
+- https
+- file
+- folder
 description: Compute metrics when comparing data between two sources.
 icon: icon.png
 name: data_compare
 type: consistency
 url: https://github.com/qalita-io/packs/tree/main/data_compare_pack
-version: 2.0.21
+version: 2.0.24
 visibility: public
-
-compatible_sources:
-  - mysql
-  - postgresql
-  - sqlite
-  - mongodb
-  - oracle
-  - s3
-  - gcs
-  - azure_blob
-  - hdfs
-  - sftp
-  - http
-  - https
-  - file
-  - folder

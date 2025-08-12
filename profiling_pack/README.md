@@ -1,23 +1,25 @@
-# Profiling
+## Profiling Pack
 
-This pack uses [ydata Profiling](https://github.com/ydataai/ydata-profiling) python package 🐍 to scan and compute general metrics 📈 on the data.
+### Overview
+Profiles your dataset(s) using `ydata-profiling` and produces comprehensive metrics, recommendations, and schema information. Supports single DataFrame sources and databases returning multiple tables.
 
-## Input 📥
+### How it works
+- Loads the source as a pandas DataFrame or a list of DataFrames (for databases when `table_or_query` is `*` or a list).
+- For each dataset:
+  - Generates a `ydata-profiling` HTML and JSON report.
+  - Computes column-level completeness and general table metrics; derives a dataset `score = 1 - p_cells_missing`.
+  - Extracts warnings from the profiling HTML as recommendations with levels.
+  - Builds schema entries for each column and dataset.
 
-### Configuration ⚙️
+### Supported sources
+- Files: csv, xlsx
+- Databases: any SQLAlchemy-compatible (e.g., PostgreSQL, MySQL, MSSQL, Oracle, etc.).
 
-| Name                   | Type  | Required | Default | Description                                              |
-| ---------------------- | ----- | -------- | ------- | -------------------------------------------------------- |
-| `jobs.source.skiprows` | `int` | no       | `0`     | The number of rows to skip at the beginning of the file. |
+### Configuration
+- `job.source.skiprows` (int, default 0): number of rows to skip when reading files.
+- `source.config.table_or_query` (string | list | `*`): database table name, SQL query, list of tables, or `*` to scan all tables.
 
-
-### Source type compatibility 🧩
-
-This pack is compatible with **files** 📁 (``csv``, ``xslx``) and **databases** 🖥️ (``MySQL``, ``PostgreSQL``).
-
-## Analysis 🕵️‍♂️
-
-The pack assesses the data and computes the following metrics:
+### Metrics
 
 | Name                         | Description                                                                                        | Scope          | Type                                |
 | ---------------------------- | -------------------------------------------------------------------------------------------------- | -------------- | ----------------------------------- |
@@ -92,24 +94,23 @@ The pack assesses the data and computes the following metrics:
 | `script_counts`              | Script counts    EX: `{'Latin': 918}`                                                              | column:Text    | `dict` of script:count              |
 | `script_char_counts`         | Script character counts    EX: `{'Latin': {'a': 918}}`                                             | column:Text    | `dict` of script:dict of char_count |
 
-## Output 📤
+### Usage
+1) Configure `source_conf.json` and `pack_conf.json`.
+2) For databases, set `table_or_query` (string, list, or `*`).
+3) Run the pack; it processes each dataset and aggregates outputs.
 
-### Report 📊
+### Outputs
+- Files per dataset:
+  - `{dataset_name}_report.html`
+  - `{dataset_name}_report.json`
+  - If file source (single dataset): `{YYYYMMDD}_profiling_report_{source_name}.html` saved next to the source file
+- JSON artifacts:
+  - `metrics.json`: includes dataset- and column-scoped metrics (e.g., `completeness_score`, `p_cells_missing`, `score`)
+  - `recommendations.json`: alerts parsed from profiling report with levels and scopes
+  - `schemas.json`: dataset and column entries
 
-The pack generates a report with the computed metrics and the following sections:
+### Multi-table handling and scopes
+- When multiple tables are returned, each table is treated as a separate dataset. Names come from `table_or_query` (if a list) or default to `{source_name}_{index}`. Dataset metrics include a `parent_scope` when the source is a database.
 
-- **Overview** 👁️ Get a high-level summary of the dataset, including key metrics and insights.
-- **Variables** 📊 Dive into each variable, reviewing distributions, and statistics.
-- **Warnings** ⚠️ Highlight potential issues in the data, such as outliers or missing values.
-- **Correlations** 🔗 Explore the relationships between different variables.
-- **Histogram** 📈 Visualize the distribution of data for each variable.
-- **Interactions** 💡 Discover interaction effects between variables.
-- **Missing Values** ❓ Identify and address gaps in the data.
-- **Sample** 🧪 Take a closer look at a subset of the data.
-- **File** 📁 Access and manage the underlying data file.
-
-Filename is `{current_date}_profiling_report_{source_config["name"]}.xlsx`
-
-# Contribute 💡
-
-[This pack is part of Qalita Open Source Assets (QOSA) and is open to contribution. You can help us improve this pack by forking it and submitting a pull request here.](https://github.com/qalita-io/packs) 👥🚀
+### Contribute
+This pack is part of Qalita Open Source Assets (QOSA). Contributions are welcome: https://github.com/qalita-io/packs.
