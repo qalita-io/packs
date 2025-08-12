@@ -59,8 +59,12 @@ else:
     print(f"Failed to fetch schema, status code: {response_schema.status_code}")
     sys.exit(1)
 
-# Local CSV schema
-local_columns = set(pack.df_source.columns)
+raw_df_source = pack.df_source
+if isinstance(raw_df_source, list):
+    # For multiple datasets, just compare the first one for versioning purpose
+    local_columns = set(raw_df_source[0].columns)
+else:
+    local_columns = set(raw_df_source.columns)
 
 # Remote schema
 remote_columns = set(item["value"] for item in schema if item["key"] == "column")

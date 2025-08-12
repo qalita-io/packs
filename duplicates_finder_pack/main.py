@@ -15,81 +15,78 @@ if pack.source_config.get("type") == "database":
 else:
     pack.load_data("source")
 
-# Define uniqueness_columns if not specified in pack_config
-if (
-    "job" in pack.pack_config
-    and "compute_uniqueness_columns" in pack.pack_config["job"]
-    and len(pack.pack_config["job"]["compute_uniqueness_columns"]) > 0
-):
-    uniqueness_columns = pack.pack_config["job"]["compute_uniqueness_columns"]
+############################ Support single or multiple datasets
+raw_df_source = pack.df_source
+configured = pack.source_config.get("config", {}).get("table_or_query")
+if isinstance(raw_df_source, list):
+    if isinstance(configured, (list, tuple)) and len(configured) == len(raw_df_source):
+        items = list(zip(list(configured), raw_df_source))
+    else:
+        base = pack.source_config["name"]
+        items = [(f"{base}_{i+1}", df) for i, df in enumerate(raw_df_source)]
 else:
-    uniqueness_columns = pack.df_source.columns
+    items = [(pack.source_config["name"], raw_df_source)]
 
-############################ Metrics
+# Process each dataset independently
+for dataset_label, df_curr in items:
+    if (
+        "job" in pack.pack_config
+        and "compute_uniqueness_columns" in pack.pack_config["job"]
+        and len(pack.pack_config["job"]["compute_uniqueness_columns"]) > 0
+    ):
+        uniqueness_columns = pack.pack_config["job"]["compute_uniqueness_columns"]
+    else:
+        uniqueness_columns = df_curr.columns
 
-# Step 1: Filter the DataFrame based on the specified columns
-print("Columns used for checking duplicates:", uniqueness_columns)
-df_subset = pack.df_source[uniqueness_columns].copy()
-duplicates = df_subset.duplicated()
-total_rows = len(pack.df_source)
+    print("Columns used for checking duplicates:", uniqueness_columns)
+    df_subset = df_curr[uniqueness_columns].copy()
+    duplicates = df_subset.duplicated()
+    total_rows = len(df_curr)
+    total_duplicates = duplicates.sum()
 
-print("total rows "+str(total_rows))
+    print("[", dataset_label, "] total rows "+str(total_rows))
+    print("[", dataset_label, "] total duplicates "+str(total_duplicates))
 
-# Step 2: Calculate the number of duplicate rows based on this subset
-total_duplicates = duplicates.sum()
+    duplication_score = round(total_duplicates / total_rows if total_rows > 0 else 0, 2)
+    score = 1 - duplication_score
 
-print("total duplicates "+str(total_duplicates))
-
-# Calculate the scoped duplication score
-duplication_score = round(total_duplicates / total_rows if total_rows > 0 else 0, 2)
-
-# Invert the score for the scoped scenario
-score = 1 - duplication_score
-
-# Add the inverted duplication score to the metrics
-pack.metrics.data.append(
-    {
-        "key": "score",
-        "value": str(round(score, 2)),
-        "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
-    }
-)
-
-# Create metric entries as DataFrames
-pack.metrics.data.append(
-    {
-        "key": "duplicates",
-        "value": int(total_duplicates),
-        "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
-    }
-)
-
-# Check if scoped score is calculated and add its metrics
-if (
-    "job" in pack.pack_config
-    and "compute_uniqueness_columns" in pack.pack_config["job"]
-):
+    pack.metrics.data.append(
+        {
+            "key": "score",
+            "value": str(round(score, 2)),
+            "scope": {"perimeter": "dataset", "value": dataset_label},
+        }
+    )
     pack.metrics.data.append(
         {
             "key": "duplicates",
             "value": int(total_duplicates),
-            "scope": {
-                "perimeter": "dataset",
-                "value": ", ".join(uniqueness_columns),
-            },
+            "scope": {"perimeter": "dataset", "value": dataset_label},
         }
     )
+    if (
+        "job" in pack.pack_config
+        and "compute_uniqueness_columns" in pack.pack_config["job"]
+    ):
+        pack.metrics.data.append(
+            {
+                "key": "duplicates",
+                "value": int(total_duplicates),
+                "scope": {
+                    "perimeter": "dataset",
+                    "value": ", ".join(uniqueness_columns),
+                },
+            }
+        )
 
-############################ Recommendations
-if score < 0.9:
-
-    recommendation = {
-        "content": f"dataset '{pack.source_config['name']}' has a duplication rate of {duplication_score*100}%. on the scope {uniqueness_columns.to_list()} .",
-        "type": "Duplicates",
-        "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
-        "level": determine_recommendation_level(duplication_score),
-    }
-    pack.recommendations.data.append(recommendation)
+    if score < 0.9:
+        recommendation = {
+            "content": f"dataset '{dataset_label}' has a duplication rate of {duplication_score*100}% on the scope {list(uniqueness_columns)}.",
+            "type": "Duplicates",
+            "scope": {"perimeter": "dataset", "value": dataset_label},
+            "level": determine_recommendation_level(duplication_score),
+        }
+        pack.recommendations.data.append(recommendation)
 
 
 pack.metrics.save()
@@ -99,8 +96,16 @@ pack.recommendations.save()
 # Step 1: Retrieve 'id_columns' from pack_config
 id_columns = pack.pack_config.get("job", {}).get("id_columns", [])
 
-# Step 2: Identify duplicated rows
-duplicated_rows = pack.df_source[duplicates]
+# Step 2: Identify duplicated rows (for the first dataset only for export simplicity)
+if isinstance(pack.df_source, list):
+    export_df = items[0][1]
+    export_uniqueness = (
+        pack.pack_config.get("job", {}).get("compute_uniqueness_columns") or export_df.columns
+    )
+    export_duplicates = export_df[list(export_uniqueness)].duplicated()
+    duplicated_rows = export_df[export_duplicates]
+else:
+    duplicated_rows = pack.df_source[duplicates]
 
 # Check if there are any duplicates
 if duplicates.empty:

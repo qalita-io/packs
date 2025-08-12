@@ -1,6 +1,7 @@
-# Outlier Detection
+## Outlier Detection Pack
 
-The Outlier Detection pack focuses on identifying and quantifying outliers within datasets, providing insights into the normality of data distributions. It utilizes the K-Nearest Neighbors (KNN) algorithm from the [PyOD library](https://pyod.readthedocs.io/) for outlier detection in both univariate (column-wise) and multivariate (dataset-wise) contexts.
+### Overview
+Identifies univariate and multivariate outliers and computes normality scores per column and dataset using PyOD KNN. Supports multi-table databases and single DataFrames.
 
 ## Input 📥
 
@@ -13,9 +14,10 @@ The Outlier Detection pack focuses on identifying and quantifying outliers withi
 | `jobs.id_columns`           | `list` | no       | `[]`    | The list of columns to be used as an identifier.                                                                                 |
 | `jobs.outlier_threshold`    | `int`  | no       | `0.5`   | The threshold for detecting outliers based on the inlier score `inlier_score = 1 - scores / (scores.max() + epsilon)`.           |
 
-### Source type compatibility 🧩
+### Supported sources
 
-This pack is compatible with **files** 📁 (``csv``, ``xslx``).
+- Files: csv, xlsx
+- Databases: any SQLAlchemy-compatible
 
 ## Analysis 🕵️‍♂️
 
@@ -35,15 +37,17 @@ The pack assesses the data and computes the following metrics:
 
 ## Output 📤
 
-### Report 📊
+### Usage
+1) Configure `source_conf.json` and `pack_conf.json`.
+2) For databases, set `table_or_query` to string, list, or `*`.
+3) Run the pack.
 
-The pack generates a report containing the following insights:
+### Outputs
+- `metrics.json`: per-column `normality_score`, `outliers`; per-dataset `normality_score_dataset`, `score`, and `outliers_table`.
+- For file sources: `{YYYYMMDD}_outlier_detection_report_{dataset}.xlsx` per dataset with detailed outliers.
 
-* **Univariate Outlier Detection**: A summary of the normality score for each numeric column, indicating the proportion of inliers in each column.
-* **Multivariate Outlier Detection**: A summary of the normality score for the entire dataset, indicating the proportion of inliers across the entire dataset.
+### Multi-table handling and scopes
+- Each table is processed as a dataset; names derive from `table_or_query` or `{source_name}_{index}`. Scopes include `parent_scope` for databases.
 
-Filename is `{current_date}_outlier_detection_report_{source_config["name"]}.xlsx`
-
-# Contribute 💡
-
-[This pack is part of Qalita Open Source Assets (QOSA) and is open to contribution. You can help us improve this pack by forking it and submitting a pull request here.](https://github.com/qalita-io/packs) 👥🚀
+### Contribute
+This pack is part of Qalita Open Source Assets (QOSA). Contributions are welcome: https://github.com/qalita-io/packs.

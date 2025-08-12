@@ -1,23 +1,22 @@
+compatible_sources:
+- mysql
+- postgresql
+- sqlite
+- mongodb
+- oracle
+- s3
+- gcs
+- azure_blob
+- hdfs
+- sftp
+- http
+- https
+- file
+- folder
 description: Determine the version and schema changes
 icon: icon.png
 name: versioning
 type: version
 url: https://github.com/qalita-io/packs/tree/main/versioning_pack
-version: 2.0.1
+version: 2.0.4
 visibility: public
-
-compatible_sources:
-  - mysql
-  - postgresql
-  - sqlite
-  - mongodb
-  - oracle
-  - s3
-  - gcs
-  - azure_blob
-  - hdfs
-  - sftp
-  - http
-  - https
-  - file
-  - folder

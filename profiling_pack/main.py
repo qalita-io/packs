@@ -29,211 +29,225 @@ else:
 # Determine the appropriate name for 'dataset' in 'scope'
 dataset_scope_name = pack.source_config["name"]
 
-print(f"Generating profile for {dataset_scope_name}")
+# Normaliser la source en une liste de tuples (nom_dataset, dataframe)
+raw_df_source = pack.df_source
+configured_table_or_query = pack.source_config.get("config", {}).get("table_or_query")
+data_items = []
+if isinstance(raw_df_source, list):
+    # Si la config fournit une liste de tables, l'utiliser comme noms si elle correspond en taille
+    names = None
+    if isinstance(configured_table_or_query, (list, tuple)):
+        names = list(configured_table_or_query)
+        if len(names) != len(raw_df_source):
+            names = None
+    if names is None:
+        names = [f"{dataset_scope_name}_{i+1}" for i in range(len(raw_df_source))]
+    data_items = list(zip(names, raw_df_source))
+else:
+    data_items = [(dataset_scope_name, raw_df_source)]
 
-# Run the profiling report
-profile = ProfileReport(
-    pack.df_source,
-    title=f"Profiling Report for {dataset_scope_name}",
-    correlations={"auto": {"calculate": False}},
-)
+print(f"Generating profile for {len(data_items)} dataset(s)")
 
-# Save the report to HTML
-html_file_name = f"{dataset_scope_name}_report.html"
-profile.to_file(html_file_name)
+# Conteneurs globaux si besoin d'agréger
+all_alerts_records = []
 
-if pack.source_config["type"] == "file":
-    source_file_dir = os.path.dirname(pack.source_config["config"]["path"])
-    current_date = datetime.now().strftime("%Y%m%d")
-    report_file_path = os.path.join(
-        source_file_dir,
-        f'{current_date}_profiling_report_{pack.source_config["name"]}.html',
+for dataset_name, df in data_items:
+    # Aperçu
+    try:
+        print(f"Preview for {dataset_name}:")
+        print(df.head())
+    except Exception:
+        pass
+
+    # Profiling pour ce dataset
+    profile = ProfileReport(
+        df,
+        title=f"Profiling Report for {dataset_name}",
+        correlations={"auto": {"calculate": False}},
     )
 
-    profile.to_file(report_file_path)
+    # Sauvegarde HTML
+    html_file_name = f"{dataset_name}_report.html"
+    profile.to_file(html_file_name)
 
-    print(f"Profiling report saved to {report_file_path}")
+    # Pour les sources fichier, on dépose aussi le rapport à côté du fichier source
+    if pack.source_config["type"] == "file" and len(data_items) == 1:
+        source_file_dir = os.path.dirname(pack.source_config["config"]["path"])
+        current_date = datetime.now().strftime("%Y%m%d")
+        report_file_path = os.path.join(
+            source_file_dir,
+            f'{current_date}_profiling_report_{pack.source_config["name"]}.html',
+        )
+        profile.to_file(report_file_path)
+        print(f"Profiling report saved to {report_file_path}")
 
-# Save the report to JSON
-json_file_name = f"{dataset_scope_name}_report.json"
-profile.to_file(json_file_name)
+    # Sauvegarde JSON (structure exportée par ydata_profiling)
+    json_file_name = f"{dataset_name}_report.json"
+    profile.to_file(json_file_name)
 
-try:
-    with open(html_file_name, "r", encoding="utf-8") as f:
-        html_content = f.read()
-        tables = pd.read_html(StringIO(html_content)) 
-except ValueError as e:
-    print(f"No tables found in the HTML report: {e}")
-    tables = [pd.DataFrame()]  # Create an empty DataFrame if no tables are found
+    # Extraire tableaux HTML pour les alertes (si présents)
+    try:
+        with open(html_file_name, "r", encoding="utf-8") as f:
+            html_content = f.read()
+            tables = pd.read_html(StringIO(html_content))
+    except ValueError as e:
+        print(f"No tables found in the HTML report for {dataset_name}: {e}")
+        tables = [pd.DataFrame()]
 
-############################ Metrics
+    ############################ Metrics (par dataset)
+    # Scores de complétude par colonne
+    for col in df.columns:
+        non_null_count = max(df[col].notnull().sum(), 0)
+        total_count = max(len(df), 1)
+        completeness_score = round(non_null_count / total_count, 2)
+        pack.metrics.data.append(
+            {
+                "key": "completeness_score",
+                "value": str(completeness_score),
+                "scope": {
+                    "perimeter": "column",
+                    "value": col,
+                    "parent_scope": {
+                        "perimeter": "dataset",
+                        "value": dataset_name,
+                    },
+                },
+            }
+        )
 
-# Calculate the completeness score for each column
-for col in pack.df_source.columns:
-    non_null_count = max(pack.df_source[col].notnull().sum(), 0)  # Ensure non-negative
-    total_count = max(len(pack.df_source), 1)  # Ensure non-zero and non-negative
-    completeness_score = round(non_null_count / total_count, 2)
-    pack.metrics.data.append(
-        {
-            "key": "completeness_score",
-            "value": str(completeness_score),
-            "scope": {
-                "perimeter": "column",
-                "value": col,
-                "parent_scope": {
+    # Charger le JSON du rapport pour extraire les métriques globales et variables
+    print(f"Load {dataset_name}_report.json")
+    with open(json_file_name, "r", encoding="utf-8") as file:
+        report = json.load(file)
+
+    general_data = denormalize(report["table"])
+    for key, value in general_data.items():
+        if pack.source_config["type"] == "database":
+            entry = {
+                "key": key,
+                "value": round_if_numeric(value),
+                "scope": {
                     "perimeter": "dataset",
-                    "value": dataset_scope_name,
+                    "value": dataset_name,
+                    "parent_scope": {
+                        "perimeter": "database",
+                        "value": pack.source_config["name"],
+                    },
                 },
-            },
-        }
-    )
+            }
+        else:
+            entry = {
+                "key": key,
+                "value": round_if_numeric(value),
+                "scope": {"perimeter": "dataset", "value": dataset_name},
+            }
+        pack.metrics.data.append(entry)
 
-# Load the JSON file
-print(f"Load {dataset_scope_name}_report.json")
-with open(f"{dataset_scope_name}_report.json", "r", encoding="utf-8") as file:
-    report = json.load(file)
+    variables_data = report["variables"]
+    for variable_name, attributes in variables_data.items():
+        for attr_name, attr_value in attributes.items():
+            entry = {
+                "key": attr_name,
+                "value": round_if_numeric(attr_value),
+                "scope": {
+                    "perimeter": "column",
+                    "value": variable_name,
+                    "parent_scope": {
+                        "perimeter": "dataset",
+                        "value": dataset_name,
+                    },
+                },
+            }
+            pack.metrics.data.append(entry)
 
-general_data = denormalize(report["table"])
-for key, value in general_data.items():
+    # Score basé sur p_cells_missing (directement depuis general_data)
+    try:
+        p_cells_missing = float(general_data.get("p_cells_missing", 0) or 0)
+    except Exception:
+        p_cells_missing = 0.0
+    score_value = max(min(1 - p_cells_missing, 1), 0)
+
     if pack.source_config["type"] == "database":
-        entry = {
-            "key": key,
-            "value": round_if_numeric(value),
-            "scope": {
-                "perimeter": "dataset",
-                "value": dataset_scope_name,
-                "parent_scope": {
-                    "perimeter": "database",
-                    "value": pack.source_config["name"],
+        pack.metrics.data.append(
+            {
+                "key": "score",
+                "value": str(round(score_value, 2)),
+                "scope": {
+                    "perimeter": "dataset",
+                    "value": dataset_name,
+                    "parent_scope": {
+                        "perimeter": "database",
+                        "value": pack.source_config["name"],
+                    },
                 },
-            },
-        }
+            }
+        )
     else:
-        entry = {
-            "key": key,
-            "value": round_if_numeric(value),
-            "scope": {"perimeter": "dataset", "value": dataset_scope_name},
-        }
-    pack.metrics.data.append(entry)
+        pack.metrics.data.append(
+            {
+                "key": "score",
+                "value": str(round(score_value, 2)),
+                "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
+            }
+        )
 
-variables_data = report["variables"]
-for variable_name, attributes in variables_data.items():
-    for attr_name, attr_value in attributes.items():
+    ############################ Recommendations (par dataset)
+    if len(tables) > 2:
+        alerts_data = tables[2]
+        alerts_data.columns = ["content", "type"]
+        alerts_data["scope"] = alerts_data["content"].apply(
+            lambda x: {
+                "perimeter": "column",
+                "value": extract_variable_name(x),
+                "parent_scope": {"perimeter": "dataset", "value": dataset_name},
+            }
+        )
+        alerts_data["level"] = alerts_data["content"].apply(determine_level)
+    else:
+        print(f"No alerts table found in the HTML report for {dataset_name}.")
+        alerts_data = pd.DataFrame()
+
+    all_alerts_records.extend(alerts_data.to_dict(orient="records"))
+
+    ############################ Schemas (par dataset)
+    for variable_name in report["variables"].keys():
         entry = {
-            "key": attr_name,
-            "value": round_if_numeric(attr_value),
+            "key": "column",
+            "value": variable_name,
             "scope": {
                 "perimeter": "column",
                 "value": variable_name,
-                "parent_scope": {
+                "parent_scope": {"perimeter": "dataset", "value": dataset_name},
+            },
+        }
+        pack.schemas.data.append(entry)
+
+    if pack.source_config["type"] == "database":
+        pack.schemas.data.append(
+            {
+                "key": "dataset",
+                "value": dataset_name,
+                "scope": {
                     "perimeter": "dataset",
-                    "value": dataset_scope_name,
+                    "value": dataset_name,
+                    "parent_scope": {
+                        "perimeter": "database",
+                        "value": pack.source_config["name"],
+                    },
                 },
-            },
-        }
-        pack.metrics.data.append(entry)
+            }
+        )
+    else:
+        pack.schemas.data.append(
+            {
+                "key": "dataset",
+                "value": dataset_name,
+                "scope": {"perimeter": "dataset", "value": dataset_name},
+            }
+        )
 
-# Extract p_cells_missing value (as a decimal)
-df_missing = pd.DataFrame(pack.metrics.data)
-p_cells_missing_value = df_missing[df_missing["key"] == "p_cells_missing"][
-    "value"
-].values[0]
-p_cells_missing = float(p_cells_missing_value)
-
-# Calculate the score
-score_value = 1 - p_cells_missing
-
-# Ensure the score is within the range [0, 1]
-score_value = max(min(score_value, 1), 0)
-
-# Creating the DataFrame for the score
-if pack.source_config["type"] == "database":
-    pack.metrics.data.append(
-        {
-            "key": "score",
-            "value": str(round(score_value, 2)),
-            "scope": {
-                "perimeter": "dataset",
-                "value": dataset_scope_name,
-                "parent_scope": {
-                    "perimeter": "database",
-                    "value": pack.source_config["name"],
-                },
-            },
-        }
-    )
-else:
-    pack.metrics.data.append(
-        {
-            "key": "score",
-            "value": str(round(score_value, 2)),
-            "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
-        }
-    )
-
-# Convert the completeness scores to DataFrame
-completeness_scores_df = pd.DataFrame(pack.metrics.data)
-
-############################ Recommendations
-# Handle alerts
-if len(tables) > 2:  # Check if the expected table exists
-    alerts_data = tables[2]  # Adjust the index based on where the alerts are located
-    alerts_data.columns = ["content", "type"]
-    # Apply the extract_variable_name function to set the 'scope' column
-    alerts_data["scope"] = alerts_data["content"].apply(
-        lambda x: {
-            "perimeter": "column",
-            "value": extract_variable_name(x),
-            "parent_scope": {"perimeter": "dataset", "value": dataset_scope_name},
-        }
-    )
-
-    # Apply the function to the 'content' column of the alerts DataFrame
-    alerts_data["level"] = alerts_data["content"].apply(determine_level)
-else:
-    print("No alerts table found in the HTML report.")
-    alerts_data = pd.DataFrame()  # Create an empty DataFrame if no alerts are found
-
-alerts_list_of_dicts = alerts_data.to_dict(orient="records")
-pack.recommendations.data = alerts_list_of_dicts
-
-############################ Schemas
-# Add entries for each variable
-for variable_name in report["variables"].keys():
-    entry = {
-        "key": "column",
-        "value": variable_name,
-        "scope": {
-            "perimeter": "column",
-            "value": variable_name,
-            "parent_scope": {"perimeter": "dataset", "value": dataset_scope_name},
-        },
-    }
-    pack.schemas.data.append(entry)
-
-if pack.source_config["type"] == "database":
-    pack.schemas.data.append(
-        {
-            "key": "dataset",
-            "value": dataset_scope_name,
-            "scope": {
-                "perimeter": "dataset",
-                "value": dataset_scope_name,
-                "parent_scope": {
-                    "perimeter": "database",
-                    "value": pack.source_config["name"],
-                },
-            },
-        }
-    )
-else:
-    pack.schemas.data.append(
-        {
-            "key": "dataset",
-            "value": dataset_scope_name,
-            "scope": {"perimeter": "dataset", "value": dataset_scope_name},
-        }
-    )
+############################ Consolidate recommendations across datasets
+pack.recommendations.data = all_alerts_records
 
 ############################ Writing Results to Files
 
