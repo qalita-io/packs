@@ -1,0 +1,11 @@
+{
+    "config": {
+        "path": "../data/ref-bio-data/ref_bio_data.xlsx"
+    },
+    "description": "Ref data for clinical dataset",
+    "name": "Bio referential data",
+    "reference": true,
+    "sensitive": false,
+    "type": "file",
+    "visibility": "public"
+}
