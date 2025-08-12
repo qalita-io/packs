@@ -27,7 +27,7 @@ generate_test_datasets() {
 # Assuming the current directory is the location of this script
 # And the root directory of your project is one level up
 ROOT_DIR=$(pwd)
-DATA_DIR="${ROOT_DIR}/data"
+DATA_DIR="${ROOT_DIR}/tests/data"
 
 # Call the function to generate the TEST_PACKS array
 generate_test_packs "${ROOT_DIR}"

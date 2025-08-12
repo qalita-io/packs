@@ -1,0 +1,11 @@
+{
+    "config": {
+        "path": "../data/heart-failure-prediction-dataset/heart.xlsx"
+    },
+    "description": "11 clinical features for predicting heart disease events.",
+    "name": "Heart Failure Prediction Dataset",
+    "reference": false,
+    "sensitive": false,
+    "type": "file",
+    "visibility": "public"
+}

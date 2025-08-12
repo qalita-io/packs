@@ -1,0 +1,11 @@
+{
+    "config": {
+        "path": "../data/heart-stroke-prevention/dataset.csv"
+    },
+    "description": "Provides a comprehensive image for cardiovascular diseases & related prevention",
+    "name": "Heart Disease and Stroke Prevention",
+    "reference": false,
+    "sensitive": false,
+    "type": "file",
+    "visibility": "public"
+}
