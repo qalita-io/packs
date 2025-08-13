@@ -1,0 +1,20 @@
+{
+  "job": {
+    "project_dir": ".",
+    "profiles_dir": "~/.dbt",
+    "target": null,
+    "models": null,
+    "threads": 4,
+    "vars": {}
+  },
+  "charts": {
+    "overview": [
+      {"metric_key": "score", "chart_type": "text", "display_title": true, "justify": true}
+    ],
+    "scoped": [
+      {"metric_key": "tests_failed", "chart_type": "text", "display_title": true, "justify": true}
+    ]
+  }
+}
+
+
