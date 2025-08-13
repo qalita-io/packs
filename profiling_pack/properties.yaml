@@ -13,9 +13,14 @@ compatible_sources:
 - https
 - file
 - folder
-description: Gives common profiling metrics and completeness score
+description: Gives common profiling metrics and completeness score for a dataset.
+  This pack is used to compute the completeness of a dataset.
 icon: icon.png
 name: profiling
+tags:
+- Data Governance
+- Data Profiling
+- Generic
 type: completeness
 url: https://github.com/qalita-io/packs/tree/main/profiling_pack
 version: 2.0.11

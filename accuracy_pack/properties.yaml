@@ -13,9 +13,14 @@ compatible_sources:
 - https
 - file
 - folder
-description: Compute decimal accuracy metrics
+description: Compute decimal accuracy metrics for float columns
 icon: icon.png
 name: accuracy
+tags:
+- Finance
+- Regulatory Reporting
+- Manufacturing
+- Data Accuracy
 type: accuracy
 url: https://github.com/qalita-io/packs/tree/main/accuracy_pack
 version: 2.0.4

@@ -13,9 +13,15 @@ compatible_sources:
 - https
 - file
 - folder
-description: Scan schema
+description: Scan schema of a dataset and compute metrics such as the number of columns,
+  the number of rows, the number of unique values, the number of null values, the
+  number of duplicate values, etc.
 icon: icon.png
 name: schema_scanner
+tags:
+- Data Modeling
+- Data Governance
+- BI
 type: schema
 url: https://github.com/qalita-io/packs/tree/main/schema_scanner_pack
 version: 2.0.6

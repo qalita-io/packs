@@ -13,9 +13,14 @@ compatible_sources:
 - https
 - file
 - folder
-description: Checks with Soda Check Library
+description: Checks with Soda Check Library. This pack is used to check the data quality
+  of a dataset using Soda Check Library.
 icon: icon.png
 name: soda
+tags:
+- Data Quality
+- Validity Checks
+- Generic
 type: validity
 version: 1.0.3
 visibility: public
