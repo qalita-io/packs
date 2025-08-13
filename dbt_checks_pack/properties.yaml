@@ -1,0 +1,27 @@
+compatible_sources:
+- mysql
+- postgresql
+- sqlite
+- mongodb
+- oracle
+- s3
+- gcs
+- azure_blob
+- hdfs
+- sftp
+- http
+- https
+- file
+- folder
+description: Run dbt tests and expose pass/fail metrics by parsing run_results.json
+icon: icon.png
+name: dbt_checks
+tags:
+- Data Quality
+- dbt
+- Governance
+- Testing
+type: validity
+url: https://github.com/qalita-io/packs/tree/main/dbt_checks_pack
+version: 0.1.0
+visibility: public
