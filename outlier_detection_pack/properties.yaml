@@ -13,9 +13,15 @@ compatible_sources:
 - https
 - file
 - folder
-description: Automatic Outliers Detection using pyod
+description: Automatic Outliers Detection using pyod. This pack is used to detect
+  outliers in a dataset using pyod.
 icon: icon.png
 name: outlier_detection
+tags:
+- Banking
+- Fraud Detection
+- Manufacturing
+- IoT
 type: reasonability
 url: https://github.com/qalita-io/packs/tree/main/outlier_detection_pack
 version: 2.0.9

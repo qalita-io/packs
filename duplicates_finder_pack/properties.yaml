@@ -13,9 +13,16 @@ compatible_sources:
 - https
 - file
 - folder
-description: Compute duplication score
+description: Compute duplication score for a dataset. This pack is used to find duplicates
+  in a dataset and compute a score based on the number of duplicates.
 icon: icon.png
 name: duplicates_finder
+tags:
+- CRM
+- MDM
+- Customer 360
+- E-commerce
+- Healthcare
 type: uniqueness
 url: https://github.com/qalita-io/packs/tree/main/duplicates_finder_pack
 version: 2.0.4

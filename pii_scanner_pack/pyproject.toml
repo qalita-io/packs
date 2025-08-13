@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "pii-scanner-pack"
+version = "0.1.0"
+description = "Detects PII patterns and computes sensitivity metrics"
+authors = ["QALITA SAS <contact@qalita.io>"]
+license = "Proprietary"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.12"
+qalita-core = ">=0.6.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+

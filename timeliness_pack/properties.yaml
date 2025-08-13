@@ -13,9 +13,14 @@ compatible_sources:
 - https
 - file
 - folder
-description: Check freshness from date columns
+description: Check freshness from date columns. This pack is used to check the freshness
+  of a dataset based on the date columns.
 icon: icon.png
 name: timeliness
+tags:
+- Real-time Analytics
+- Monitoring
+- SLAs
 type: timeliness
 url: https://github.com/qalita-io/packs/tree/main/timeliness_pack
 version: 2.0.4
