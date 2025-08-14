@@ -1,20 +1,6 @@
 #!/bin/sh
 echo "Running as user: $(whoami)"
 
-# Determine the appropriate command to use for python
-if command -v python3 > /dev/null 2>&1
-then
-    PYTHON_CMD="python3"
-    echo "Using python3"
-elif command -v python > /dev/null 2>&1
-then
-    PYTHON_CMD="python"
-    echo "Using python"
-else
-    echo "Could not find a suitable python command"
-    exit 1
-fi
-
 # Extract pack name from properties.yaml using Python
 echo "Extracting pack name..."
 PACK_NAME=$(grep 'name:' properties.yaml | awk '{print $2}')
@@ -24,9 +10,86 @@ if [ $? -ne 0 ]; then
 fi
 echo "Pack name: $PACK_NAME"
 
+# Select a Python interpreter that satisfies the project's pyproject.toml requirement
+echo "Resolving Python version from pyproject.toml..."
+if [ ! -f pyproject.toml ]; then
+    echo "pyproject.toml not found."
+    exit 1
+fi
+
+REQUIRED_SPEC=$(grep -E '^\s*python\s*=' pyproject.toml | head -n1 | cut -d '=' -f2- | tr -d ' "')
+if [ -z "$REQUIRED_SPEC" ]; then
+    echo "Could not read python requirement from pyproject.toml."
+    exit 1
+fi
+echo "Python requirement: $REQUIRED_SPEC"
+
+# Extract lower (>=) and upper (<) bounds if present (major.minor only)
+MIN_VER=$(echo "$REQUIRED_SPEC" | sed -n 's/.*>=\([0-9]\+\.[0-9]\+\).*/\1/p')
+MAX_VER=$(echo "$REQUIRED_SPEC" | sed -n 's/.*<\([0-9]\+\.[0-9]\+\).*/\1/p')
+
+# Version comparison helpers using sort -V
+version_ge() {
+    # $1 >= $2 ?
+    [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | tail -n1)" = "$1" ]
+}
+
+version_lt() {
+    # $1 < $2 ?
+    [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | head -n1)" = "$1" ] && [ "$1" != "$2" ]
+}
+
+# Build candidate list of python executables to try (prefer specific versions)
+CANDIDATE_CMDS=""
+for MINOR in $(seq 6 20); do
+    if command -v "python3.$MINOR" > /dev/null 2>&1; then
+        CANDIDATE_CMDS="$CANDIDATE_CMDS python3.$MINOR"
+    fi
+done
+if command -v python3 > /dev/null 2>&1; then
+    CANDIDATE_CMDS="$CANDIDATE_CMDS python3"
+fi
+if command -v python > /dev/null 2>&1; then
+    CANDIDATE_CMDS="$CANDIDATE_CMDS python"
+fi
+
+BEST_CMD=""
+BEST_VER=""
+for CMD in $CANDIDATE_CMDS; do
+    CMD_PATH=$(command -v "$CMD" 2>/dev/null) || continue
+    # Filter out Windows shims if any
+    echo "$CMD_PATH" | grep -qE '\\.exe$' && continue
+    VER=$("$CMD_PATH" -V 2>&1 | awk '{print $2}' | cut -d'.' -f1,2)
+    case "$VER" in
+        3.*) : ;;
+        *) continue ;;
+    esac
+    if [ -n "$MIN_VER" ] && ! version_ge "$VER" "$MIN_VER"; then
+        continue
+    fi
+    if [ -n "$MAX_VER" ] && ! version_lt "$VER" "$MAX_VER"; then
+        continue
+    fi
+    if [ -z "$BEST_VER" ] || version_lt "$BEST_VER" "$VER"; then
+        BEST_VER="$VER"
+        BEST_CMD="$CMD_PATH"
+    fi
+done
+
+if [ -z "$BEST_CMD" ]; then
+    echo "No available Python interpreter satisfies requirement: $REQUIRED_SPEC"
+    echo "Available candidates attempted: $CANDIDATE_CMDS"
+    exit 1
+fi
+
+PYTHON_CMD="$BEST_CMD"
+PYTHON_VERSION=$($PYTHON_CMD -V | awk '{print $2}' | cut -d'.' -f1,2)
+echo "Selected Python: $PYTHON_CMD (version $PYTHON_VERSION)"
+
 # Install poetry if it's not installed
 if ! command -v poetry > /dev/null
 then
+    echo "Poetry could not be found, installing now..."
     export POETRY_HOME="$HOME/.poetry"
     curl -sSL https://install.python-poetry.org | $PYTHON_CMD -
     export PATH="$HOME/.poetry/bin:$PATH"
@@ -36,8 +99,6 @@ then
     fi
 fi
 
-# Get Python version
-PYTHON_VERSION=$($PYTHON_CMD -V | cut -d " " -f 2 | cut -d "." -f1,2)
 echo "Detected Python version: $PYTHON_VERSION"
 
 # Attempt to install python3-venv if not present
@@ -52,12 +113,13 @@ if ! $PYTHON_CMD -m venv --help > /dev/null 2>&1; then
 fi
 
 # Check if virtual environment specific to the pack exists in the parent directory
-VENV_PATH="$HOME/.qalita/agent_run_temp/${PACK_NAME}_venv"
+# Use the selected Python minor version in the venv name to avoid mixing versions
+VENV_PATH="$HOME/.qalita/agent_run_temp/${PACK_NAME}_py${PYTHON_VERSION}_venv"
 echo "Virtual Environment Path: $VENV_PATH"
 
 if [ ! -d "$VENV_PATH" ]; then
     echo "Creating virtual environment..."
-    /usr/bin/python3 -m venv "$VENV_PATH"  # Ensure using system Python
+    "$PYTHON_CMD" -m venv "$VENV_PATH"
     if [ $? -ne 0 ]; then
         echo "Failed to create virtual environment for $PACK_NAME."
         exit 1
@@ -85,41 +147,36 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 echo "Virtual environment activated."
+echo "Venv python: $(which python)"
+echo "Venv python version: $(python -V 2>&1)"
 
-# Check if soda-core-pandas-dask is installed
-if ! pip show soda-core-pandas-dask > /dev/null 2>&1; then
-    # Install dependencies and soda-core-pandas-dask
-    apt-get update && apt-get install build-essential -y
-    # Install Rust compiler non-interactively
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-    # Source the Rust environment variables
-    if [ -f "$HOME/.cargo/env" ]; then
-        . "$HOME/.cargo/env"
-    else
-        echo "Rust environment file not found. Installation may have failed."
-        exit 1
-    fi
+# Install the requirements using Poetry export + pip to force install into active venv
+echo "Installing requirements using poetry..."
+export POETRY_VIRTUALENVS_CREATE=false
+export PIP_DISABLE_PIP_VERSION_CHECK=1
 
-    # install rust
-    pip install setuptools-rust
-    # install soda-core
-    pip install soda-core-pandas-dask
-else
-    echo "soda-core-pandas-dask is already installed."
+# Upgrade pip toolchain
+python -m pip install --upgrade pip setuptools wheel
+
+# Export requirements from Poetry and install with pip
+REQ_FILE="$(pwd)/.qalita_requirements.txt"
+poetry config warnings.export false
+poetry export -f requirements.txt --without-hashes -o "$REQ_FILE"
+if [ $? -ne 0 ]; then
+    echo "Failed to export requirements from Poetry."
+    exit 1
 fi
 
-# Install the requirements using poetry
-echo "Installing requirements using poetry..."
-poetry install --no-root
+python -m pip install -r "$REQ_FILE"
 if [ $? -ne 0 ]; then
-    echo "Failed to install requirements."
+    echo "Failed to install requirements with pip."
     exit 1
 fi
 echo "Requirements installed."
 
 # Run your script
 echo "Running script..."
-$PYTHON_CMD main.py
+python main.py
 if [ $? -ne 0 ]; then
     echo "Script execution failed."
     exit 1
