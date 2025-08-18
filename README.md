@@ -12,7 +12,7 @@ Welcome to QALITA's public packs repository. All packs in this repository are op
 
 A pack is a collection of assets that can be used to perform a specific type of analysis.
 
-Checkout [Documentation](https://doc.qalita.io/user-guides/data-engineering/pack) if  you want to know more about packs.
+Checkout [Documentation](https://doc.qalita.io/docs/platform/user-guides/data-engineering/pack/) if  you want to know more about packs.
 
 ## How to use a pack?
 
