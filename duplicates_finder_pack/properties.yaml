@@ -2,15 +2,7 @@ compatible_sources:
 - mysql
 - postgresql
 - sqlite
-- mongodb
 - oracle
-- s3
-- gcs
-- azure_blob
-- hdfs
-- sftp
-- http
-- https
 - file
 - folder
 description: Compute duplication score for a dataset. This pack is used to find duplicates
@@ -25,5 +17,5 @@ tags:
 - Healthcare
 type: uniqueness
 url: https://github.com/qalita-io/packs/tree/main/duplicates_finder_pack
-version: 2.0.4
+version: 2.0.14
 visibility: public

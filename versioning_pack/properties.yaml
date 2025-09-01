@@ -1,18 +1,6 @@
 compatible_sources:
-- mysql
-- postgresql
-- sqlite
-- mongodb
-- oracle
-- s3
-- gcs
-- azure_blob
-- hdfs
-- sftp
-- http
-- https
-- file
 - folder
+- oracle
 description: Determine the version and schema changes. This pack is used to determine
   the version and schema changes of a dataset.
 icon: icon.png
@@ -23,5 +11,5 @@ tags:
 - Governance
 type: version
 url: https://github.com/qalita-io/packs/tree/main/versioning_pack
-version: 2.0.4
+version: 2.0.15
 visibility: public

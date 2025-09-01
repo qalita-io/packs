@@ -2,15 +2,7 @@ compatible_sources:
 - mysql
 - postgresql
 - sqlite
-- mongodb
 - oracle
-- s3
-- gcs
-- azure_blob
-- hdfs
-- sftp
-- http
-- https
 - file
 - folder
 description: Scan schema of a dataset and compute metrics such as the number of columns,
@@ -24,5 +16,5 @@ tags:
 - BI
 type: schema
 url: https://github.com/qalita-io/packs/tree/main/schema_scanner_pack
-version: 2.0.6
+version: 2.0.14
 visibility: public

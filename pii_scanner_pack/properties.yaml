@@ -2,15 +2,7 @@ compatible_sources:
 - mysql
 - postgresql
 - sqlite
-- mongodb
 - oracle
-- s3
-- gcs
-- azure_blob
-- hdfs
-- sftp
-- http
-- https
 - file
 - folder
 description: Detects PII patterns (emails, phones, credit cards) and computes sensitivity
@@ -26,5 +18,5 @@ tags:
 - Retail
 type: validity
 url: https://github.com/qalita-io/packs/tree/main/pii_scanner_pack
-version: 0.1.0
+version: 0.1.8
 visibility: public
