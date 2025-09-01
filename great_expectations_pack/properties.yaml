@@ -2,15 +2,7 @@ compatible_sources:
 - mysql
 - postgresql
 - sqlite
-- mongodb
 - oracle
-- s3
-- gcs
-- azure_blob
-- hdfs
-- sftp
-- http
-- https
 - file
 - folder
 description: Run Great Expectations test suites on datasets and export pass/fail metrics
@@ -24,5 +16,5 @@ tags:
 - Governance
 type: validity
 url: https://github.com/qalita-io/packs/tree/main/great_expectations_pack
-version: 0.1.0
+version: 0.1.8
 visibility: public

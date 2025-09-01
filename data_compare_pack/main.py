@@ -1,3 +1,10 @@
+import warnings
+# Silence noisy pkg_resources deprecation warning triggered by fs namespace package
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    message=r"pkg_resources is deprecated as an API",
+)
 from qalita_core.pack import Pack
 import re
 import datacompy

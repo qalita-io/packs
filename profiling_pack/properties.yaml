@@ -2,15 +2,7 @@ compatible_sources:
 - mysql
 - postgresql
 - sqlite
-- mongodb
 - oracle
-- s3
-- gcs
-- azure_blob
-- hdfs
-- sftp
-- http
-- https
 - file
 - folder
 description: Gives common profiling metrics and completeness score for a dataset.
@@ -23,5 +15,5 @@ tags:
 - Generic
 type: completeness
 url: https://github.com/qalita-io/packs/tree/main/profiling_pack
-version: 2.0.21
+version: 2.0.36
 visibility: public

@@ -156,18 +156,22 @@ export POETRY_VIRTUALENVS_CREATE=false
 export PIP_DISABLE_PIP_VERSION_CHECK=1
 
 # Upgrade pip toolchain
-python -m pip install --upgrade pip setuptools wheel
+python -m pip install --upgrade --quiet pip setuptools wheel
 
 # Export requirements from Poetry and install with pip
 REQ_FILE="$(pwd)/.qalita_requirements.txt"
 poetry config warnings.export false
+poetry lock --no-update
 poetry export -f requirements.txt --without-hashes -o "$REQ_FILE"
 if [ $? -ne 0 ]; then
     echo "Failed to export requirements from Poetry."
     exit 1
 fi
 
-python -m pip install -r "$REQ_FILE"
+# Proactively remove Dask-related packages from previous runs to avoid import side effects
+python -m pip uninstall -y dask dask-sql distributed soda-core-pandas-dask 2>/dev/null || true
+
+python -m pip install -r "$REQ_FILE" --quiet
 if [ $? -ne 0 ]; then
     echo "Failed to install requirements with pip."
     exit 1

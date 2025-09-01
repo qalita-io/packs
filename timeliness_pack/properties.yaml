@@ -2,15 +2,7 @@ compatible_sources:
 - mysql
 - postgresql
 - sqlite
-- mongodb
 - oracle
-- s3
-- gcs
-- azure_blob
-- hdfs
-- sftp
-- http
-- https
 - file
 - folder
 description: Check freshness from date columns. This pack is used to check the freshness
@@ -23,5 +15,5 @@ tags:
 - SLAs
 type: timeliness
 url: https://github.com/qalita-io/packs/tree/main/timeliness_pack
-version: 2.0.4
+version: 2.0.12
 visibility: public

@@ -8,7 +8,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.10,<3.12"
-qalita-core = ">=0.6.2"
+qalita-core = ">=1.0.1"
 pyod = "^1.1.2"
 numpy = "^1.26.3"
 xlsxwriter = "^3.2.0"
