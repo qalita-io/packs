@@ -1,4 +1,5 @@
 from qalita_core.pack import Pack
+import pandas as pd
 
 pack = Pack()
 
@@ -22,8 +23,18 @@ for rel in relations:
     if not isinstance(child_key, list):
         child_key = [child_key]
 
-    parent_df = pack.df_source if rel["parent"]["source"] == "source" else pack.df_target
-    child_df = pack.df_source if rel["child"]["source"] == "source" else pack.df_target
+    def _load_parquet_if_path(obj):
+        try:
+            if isinstance(obj, str) and obj.lower().endswith((".parquet", ".pq")):
+                return pd.read_parquet(obj, engine="pyarrow")
+        except Exception:
+            pass
+        return obj
+
+    parent_raw = pack.df_source if rel["parent"]["source"] == "source" else pack.df_target
+    child_raw = pack.df_source if rel["child"]["source"] == "source" else pack.df_target
+    parent_df = _load_parquet_if_path(parent_raw[0] if isinstance(parent_raw, list) else parent_raw)
+    child_df = _load_parquet_if_path(child_raw[0] if isinstance(child_raw, list) else child_raw)
 
     parent_tuples = set(map(tuple, parent_df[parent_key].dropna().values.tolist()))
     child_tuples = list(map(tuple, child_df[child_key].fillna("__NULL__").values.tolist()))

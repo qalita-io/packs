@@ -1,4 +1,5 @@
 from qalita_core.pack import Pack
+import pandas as pd
 import re
 
 pack = Pack()
@@ -11,11 +12,20 @@ if pack.source_config.get("type") == "database":
 else:
     pack.load_data("source")
 
+def _load_parquet_if_path(obj):
+    try:
+        if isinstance(obj, str) and obj.lower().endswith((".parquet", ".pq")):
+            return pd.read_parquet(obj, engine="pyarrow")
+    except Exception:
+        pass
+    return obj
+
 df = pack.df_source
 if isinstance(df, list):
-    datasets = [(name, data) for name, data in zip(pack.source_config.get("config", {}).get("table_or_query", []), df)]
+    loaded = [_load_parquet_if_path(x) for x in df]
+    datasets = [(name, data) for name, data in zip(pack.source_config.get("config", {}).get("table_or_query", []), loaded)]
 else:
-    datasets = [(pack.source_config["name"], df)]
+    datasets = [(pack.source_config["name"], _load_parquet_if_path(df))]
 
 patterns = pack.pack_config.get("job", {}).get("pii_patterns", [])
 compiled = [(p["key"], re.compile(p["regex"])) for p in patterns]

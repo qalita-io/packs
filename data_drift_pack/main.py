@@ -1,4 +1,5 @@
 from qalita_core.pack import Pack
+import pandas as pd
 from scipy import stats
 import numpy as np
 
@@ -20,12 +21,23 @@ if pack.target_config.get("type") == "database":
 else:
     pack.load_data("target")
 
+def _load_parquet_if_path(obj):
+    try:
+        if isinstance(obj, str) and obj.lower().endswith((".parquet", ".pq")):
+            return pd.read_parquet(obj, engine="pyarrow")
+    except Exception:
+        pass
+    return obj
+
 ref_df = pack.df_source
 cur_df = pack.df_target
 
 if isinstance(ref_df, list) or isinstance(cur_df, list):
-    ref_df = ref_df[0] if isinstance(ref_df, list) else ref_df
-    cur_df = cur_df[0] if isinstance(cur_df, list) else cur_df
+    ref_df = _load_parquet_if_path(ref_df[0] if isinstance(ref_df, list) else ref_df)
+    cur_df = _load_parquet_if_path(cur_df[0] if isinstance(cur_df, list) else cur_df)
+else:
+    ref_df = _load_parquet_if_path(ref_df)
+    cur_df = _load_parquet_if_path(cur_df)
 
 numeric_columns = [c for c in ref_df.columns if np.issubdtype(ref_df[c].dropna().dtype, np.number) and c in cur_df.columns]
 

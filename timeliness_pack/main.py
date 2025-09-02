@@ -4,6 +4,7 @@ from dateutil.parser import parse
 from datetime import datetime
 import re
 from qalita_core.pack import Pack
+import pandas as pd
 
 # --- Chargement des données ---
 # Pour un fichier : pack.load_data("source")
@@ -67,16 +68,25 @@ def calculate_timeliness_score(days_since):
 
 raw_df_source = pack.df_source
 configured = pack.pack_config.get("job", {}).get("compute_score_columns")
+
+def _load_parquet_if_path(obj):
+    try:
+        if isinstance(obj, str) and obj.lower().endswith((".parquet", ".pq")):
+            return pd.read_parquet(obj, engine="pyarrow")
+    except Exception:
+        pass
+    return obj
+
 if isinstance(raw_df_source, list):
-    dataset_items = []
     names = pack.source_config.get("config", {}).get("table_or_query")
-    if isinstance(names, (list, tuple)) and len(names) == len(raw_df_source):
-        dataset_items = list(zip(list(names), raw_df_source))
+    loaded = [_load_parquet_if_path(x) for x in raw_df_source]
+    if isinstance(names, (list, tuple)) and len(names) == len(loaded):
+        dataset_items = list(zip(list(names), loaded))
     else:
         base = pack.source_config["name"]
-        dataset_items = [(f"{base}_{i+1}", df) for i, df in enumerate(raw_df_source)]
+        dataset_items = [(f"{base}_{i+1}", df) for i, df in enumerate(loaded)]
 else:
-    dataset_items = [(pack.source_config["name"], raw_df_source)]
+    dataset_items = [(pack.source_config["name"], _load_parquet_if_path(raw_df_source))]
 
 for dataset_label, df_curr in dataset_items:
     for column in df_curr.columns:
