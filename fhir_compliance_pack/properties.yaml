@@ -17,5 +17,5 @@ tags:
 - Compliance
 type: validity
 url: https://github.com/qalita-io/packs/tree/main/fhir_compliance_pack
-version: 0.1.8
+version: 0.1.9
 visibility: public

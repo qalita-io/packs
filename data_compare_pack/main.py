@@ -6,6 +6,7 @@ warnings.filterwarnings(
     message=r"pkg_resources is deprecated as an API",
 )
 from qalita_core.pack import Pack
+import pandas as pd
 import re
 import datacompy
 from datetime import datetime
@@ -38,19 +39,28 @@ id_columns = pack.pack_config["job"].get("id_columns", [])
 abs_tol = pack.pack_config["job"].get("abs_tol", 0.0001)
 rel_tol = pack.pack_config["job"].get("rel_tol", 0)
 
+def _load_parquet_if_path(obj):
+    try:
+        if isinstance(obj, str) and obj.lower().endswith((".parquet", ".pq")):
+            return pd.read_parquet(obj, engine="pyarrow")
+    except Exception:
+        pass
+    return obj
+
 raw_source = pack.df_source
 raw_target = pack.df_target
 
 # Normalize to list of (label, df)
 def to_items(raw_df, conf, default_name):
     if isinstance(raw_df, list):
+        loaded = [_load_parquet_if_path(x) for x in raw_df]
         names = conf.get("config", {}).get("table_or_query")
-        if isinstance(names, (list, tuple)) and len(names) == len(raw_df):
-            return list(zip(list(names), raw_df))
+        if isinstance(names, (list, tuple)) and len(names) == len(loaded):
+            return list(zip(list(names), loaded))
         else:
-            return [(f"{default_name}_{i+1}", df) for i, df in enumerate(raw_df)]
+            return [(f"{default_name}_{i+1}", df) for i, df in enumerate(loaded)]
     else:
-        return [(default_name, raw_df)]
+        return [(default_name, _load_parquet_if_path(raw_df))]
 
 source_items = to_items(raw_source, pack.source_config, pack.source_config["name"])
 target_items = to_items(raw_target, pack.target_config, pack.target_config["name"])
