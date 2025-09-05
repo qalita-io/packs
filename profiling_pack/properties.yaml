@@ -5,6 +5,8 @@ compatible_sources:
 - oracle
 - file
 - folder
+- csv
+- excel
 description: Gives common profiling metrics and completeness score for a dataset.
   This pack is used to compute the completeness of a dataset.
 icon: icon.png
@@ -15,5 +17,5 @@ tags:
 - Generic
 type: completeness
 url: https://github.com/qalita-io/packs/tree/main/profiling_pack
-version: 2.0.40
+version: 2.0.42
 visibility: public
