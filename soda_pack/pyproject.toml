@@ -9,7 +9,7 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = ">=3.11,<3.12"
 soda-core-pandas = "^3.5.5"
-qalita-core = ">=1.1.0"
+qalita-core = ">=1.2.0"
 pyarrow = "^19.0.0"
 
 [build-system]
