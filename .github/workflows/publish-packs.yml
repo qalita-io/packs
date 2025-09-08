@@ -11,6 +11,7 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    environment: cloud-platform
     defaults:
       run:
         shell: bash
