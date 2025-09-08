@@ -1,0 +1,21 @@
+compatible_sources:
+- mysql
+- postgresql
+- sqlite
+- oracle
+- file
+- folder
+description: Validate dataset compliance against HL7 FHIR resources (presence,formats,enumerations,basic
+  referential checks)
+icon: icon.png
+name: fhir_compliance
+tags:
+- Healthcare
+- FHIR
+- HL7
+- Interoperability
+- Compliance
+type: validity
+url: https://github.com/qalita-io/packs/tree/main/fhir_compliance_pack
+version: 0.1.10
+visibility: public

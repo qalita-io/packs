@@ -1,0 +1,32 @@
+{
+  "job": {
+    "resource_type": "Patient",
+    "resource_type_column": null,
+    "field_mappings": {
+      "id": "id",
+      "gender": "gender",
+      "birthDate": "birthDate",
+      "active": "active"
+    },
+    "required_fields": ["id"],
+    "enums": {
+      "gender": ["male", "female", "other", "unknown"]
+    },
+    "patterns": {
+      "id": "^[A-Za-z0-9.-]{1,64}$"
+    },
+    "date_fields": ["birthDate"],
+    "boolean_fields": ["active"]
+  },
+  "charts": {
+    "overview": [
+      { "metric_key": "score", "chart_type": "text", "display_title": true, "justify": true }
+    ],
+    "scoped": [
+      { "metric_key": "completeness", "chart_type": "text", "display_title": true, "justify": true },
+      { "metric_key": "validity_ratio", "chart_type": "spark_area_chart", "display_title": false, "justify": false }
+    ]
+  }
+}
+
+

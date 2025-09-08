@@ -1,0 +1,21 @@
+compatible_sources:
+- mysql
+- postgresql
+- sqlite
+- oracle
+- file
+- folder
+description: Monitors statistical drift between a reference dataset and a current
+  dataset for numeric columns
+icon: icon.png
+name: data_drift
+tags:
+- ML Monitoring
+- Fraud Detection
+- Marketing
+- Time Series
+- Production
+type: reasonability
+url: https://github.com/qalita-io/packs/tree/main/data_drift_pack
+version: 0.1.10
+visibility: public
