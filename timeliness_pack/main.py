@@ -69,6 +69,18 @@ def calculate_timeliness_score(days_since):
 raw_df_source = pack.df_source
 configured = pack.pack_config.get("job", {}).get("compute_score_columns")
 
+# Safely convert a Series to datetime, coercing invalid/out-of-bounds values
+def safe_to_datetime(series):
+    try:
+        # Pandas >=2.0 supports format="mixed" for heterogeneous inputs
+        return pd.to_datetime(series, errors="coerce", format="mixed")
+    except Exception:
+        try:
+            # Fallback: be lenient and coerce problematic entries
+            return pd.to_datetime(series, errors="coerce", dayfirst=True)
+        except Exception:
+            return pd.to_datetime(series, errors="coerce")
+
 def _load_parquet_if_path(obj):
     try:
         if isinstance(obj, str) and obj.lower().endswith((".parquet", ".pq")):
@@ -135,10 +147,14 @@ for dataset_label, df_curr in dataset_items:
             )
 
         elif True in date_type:
-            df_curr[column] = pd.to_datetime(df_curr[column])
+            converted = safe_to_datetime(df_curr[column])
+            # Skip if no valid dates after coercion
+            if not converted.notna().any():
+                continue
+            df_curr[column] = converted
             date_columns_count += 1
-            earliest_date = df_curr[column].min()
-            latest_date = df_curr[column].max()
+            earliest_date = converted.min()
+            latest_date = converted.max()
             if pd.isnull(earliest_date) or pd.isnull(latest_date):
                 continue
             timedelta_latest = (datetime.now() - latest_date).days
@@ -173,38 +189,7 @@ for dataset_label, df_curr in dataset_items:
                     }
                 )
 
-############################ Compute Score Based on Average days_since_latest_date
-
-if date_columns_count > 0:
-    if "job" in pack.pack_config and "compute_score_columns" in pack.pack_config["job"]:
-        compute_score_columns = pack.pack_config["job"]["compute_score_columns"]
-    else:
-        compute_score_columns = None  # use all date columns per dataset
-
-    # Grouper par dataset et calculer un score par dataset
-    # Extraire uniquement les métriques days_since_latest_date
-    ds_latest = [m for m in pack.metrics.data if m["key"] == "days_since_latest_date"]
-    # Regrouper par dataset label
-    dataset_to_values = {}
-    for m in ds_latest:
-        scope = m.get("scope", {})
-        dataset_label = scope.get("parent_scope", {}).get("value") or scope.get("value")
-        col = scope.get("value")
-        if compute_score_columns is None or col in compute_score_columns:
-            dataset_to_values.setdefault(dataset_label, []).append(int(m["value"]))
-
-    for dataset_label, values in dataset_to_values.items():
-        if not values:
-            continue
-        average_days_since_latest = sum(values) / len(values)
-        score = max(0.0, 1 - (average_days_since_latest / 365))
-        pack.metrics.data.append(
-            {
-                "key": "score",
-                "value": str(round(score, 2)),
-                "scope": {"perimeter": "dataset", "value": dataset_label},
-            }
-        )
+############################ (moved) Dataset score will be computed after column timeliness_score
 
 # Data to be written to JSON
 # Ajoute un compteur global approximatif (toutes tables confondues)
@@ -223,6 +208,10 @@ if date_columns_count > 0:
     for item in pack.metrics.data:
         if item["key"] == "days_since_latest_date":
             column_name = item["scope"]["value"]
+            dataset_label = (
+                item.get("scope", {}).get("parent_scope", {}).get("value")
+                or pack.source_config["name"]
+            )
             days_since_latest = int(item["value"])
             timeliness_score = calculate_timeliness_score(days_since_latest)
 
@@ -231,9 +220,53 @@ if date_columns_count > 0:
                 {
                     "key": "timeliness_score",
                     "value": str(round(timeliness_score, 2)),
-                    "scope": {"perimeter": "column", "value": column_name},
+                    "scope": {
+                        "perimeter": "column",
+                        "value": column_name,
+                        "parent_scope": {"perimeter": "dataset", "value": dataset_label},
+                    },
                 }
             )
+
+############################ Compute Dataset Score Based on Average timeliness_score
+
+if date_columns_count > 0:
+    compute_score_columns = pack.pack_config.get("job", {}).get("compute_score_columns")
+    # Treat missing or empty list as "use all columns"
+    if not compute_score_columns:
+        compute_score_columns = None
+
+    # Collect column timeliness_score metrics
+    ts_metrics = [
+        m
+        for m in pack.metrics.data
+        if m.get("key") == "timeliness_score"
+        and m.get("scope", {}).get("perimeter") == "column"
+    ]
+
+    dataset_to_scores = {}
+    for m in ts_metrics:
+        scope = m.get("scope", {})
+        dataset_label = scope.get("parent_scope", {}).get("value") or pack.source_config["name"]
+        column_name = scope.get("value")
+        if compute_score_columns is None or column_name in compute_score_columns:
+            try:
+                score_value = float(m.get("value", 0))
+            except Exception:
+                continue
+            dataset_to_scores.setdefault(dataset_label, []).append(score_value)
+
+    for dataset_label, scores in dataset_to_scores.items():
+        if not scores:
+            continue
+        average_score = sum(scores) / len(scores)
+        pack.metrics.data.append(
+            {
+                "key": "score",
+                "value": str(round(average_score, 2)),
+                "scope": {"perimeter": "dataset", "value": dataset_label},
+            }
+        )
 
 pack.metrics.save()
 pack.recommendations.save()
