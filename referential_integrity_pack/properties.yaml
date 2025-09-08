@@ -1,0 +1,21 @@
+compatible_sources:
+- mysql
+- postgresql
+- sqlite
+- oracle
+- file
+- folder
+description: Validates referential integrity across datasets/tables based on configured
+  foreign keys
+icon: icon.png
+name: referential_integrity
+tags:
+- ERP
+- MDM
+- Data Warehousing
+- Finance
+- Customer 360
+type: consistency
+url: https://github.com/qalita-io/packs/tree/main/referential_integrity_pack
+version: 0.1.10
+visibility: public

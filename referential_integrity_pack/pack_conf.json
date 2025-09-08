@@ -1,0 +1,18 @@
+{
+  "job": {
+    "relations": [
+      {"parent": {"source": "source", "table": "dim_customers", "key": ["customer_id"]},
+       "child": {"source": "source", "table": "fact_orders", "key": ["customer_id"]}}
+    ]
+  },
+  "charts": {
+    "overview": [
+      {"metric_key": "score", "chart_type": "text", "display_title": true, "justify": true}
+    ],
+    "scoped": [
+      {"metric_key": "missing_foreign_keys", "chart_type": "text", "display_title": true, "justify": true}
+    ]
+  }
+}
+
+

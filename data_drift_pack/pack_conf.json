@@ -1,0 +1,17 @@
+{
+  "job": {
+    "reference_window": "2024-01-01:2024-03-31",
+    "current_window": "2024-04-01:2024-06-30",
+    "drift_test": "ks"
+  },
+  "charts": {
+    "overview": [
+      {"metric_key": "score", "chart_type": "text", "display_title": true, "justify": true}
+    ],
+    "scoped": [
+      {"metric_key": "p_value", "chart_type": "spark_area_chart", "display_title": false, "justify": false}
+    ]
+  }
+}
+
+

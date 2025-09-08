@@ -5,6 +5,7 @@ from qalita_core.utils import (
     extract_variable_name,
     determine_level,
 )
+from qalita_core import sanitize_dataframe_for_parquet
 import json
 import pandas as pd
 import os
@@ -33,18 +34,30 @@ dataset_scope_name = pack.source_config["name"]
 raw_df_source = pack.df_source
 configured_table_or_query = pack.source_config.get("config", {}).get("table_or_query")
 data_items = []
+
+# Si l'opener renvoie des chemins parquet, les charger avec pandas
+def _load_parquet_if_path(obj):
+    try:
+        if isinstance(obj, str) and obj.lower().endswith((".parquet", ".pq")):
+            return pd.read_parquet(obj, engine="pyarrow")
+    except Exception:
+        pass
+    return obj
+
 if isinstance(raw_df_source, list):
-    # Si la config fournit une liste de tables, l'utiliser comme noms si elle correspond en taille
+    # Mapper chaque entrée potentielle chemin -> DataFrame
+    loaded_items = [_load_parquet_if_path(item) for item in raw_df_source]
+    # Si la config fournit une liste de noms, l'utiliser si elle correspond en taille
     names = None
     if isinstance(configured_table_or_query, (list, tuple)):
         names = list(configured_table_or_query)
-        if len(names) != len(raw_df_source):
+        if len(names) != len(loaded_items):
             names = None
     if names is None:
-        names = [f"{dataset_scope_name}_{i+1}" for i in range(len(raw_df_source))]
-    data_items = list(zip(names, raw_df_source))
+        names = [f"{dataset_scope_name}_{i+1}" for i in range(len(loaded_items))]
+    data_items = list(zip(names, loaded_items))
 else:
-    data_items = [(dataset_scope_name, raw_df_source)]
+    data_items = [(dataset_scope_name, _load_parquet_if_path(raw_df_source))]
 
 print(f"Generating profile for {len(data_items)} dataset(s)")
 
@@ -52,6 +65,12 @@ print(f"Generating profile for {len(data_items)} dataset(s)")
 all_alerts_records = []
 
 for dataset_name, df in data_items:
+    # Sanitize the DataFrame before profiling/serialization to avoid downstream
+    # encoding/type issues with libraries expecting homogeneous column types.
+    try:
+        df = sanitize_dataframe_for_parquet(df)
+    except Exception:
+        pass
     # Aperçu
     try:
         print(f"Preview for {dataset_name}:")

@@ -7,9 +7,10 @@ license = "Apache-2.0"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
-soda-core-pandas-dask = "^3.1.5"
-qalita-core = "^0.3.0"
+python = ">=3.11,<3.12"
+soda-core-pandas = "^3.5.5"
+qalita-core = ">=1.2.1"
+pyarrow = "^19.0.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

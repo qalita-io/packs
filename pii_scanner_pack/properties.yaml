@@ -1,0 +1,22 @@
+compatible_sources:
+- mysql
+- postgresql
+- sqlite
+- oracle
+- file
+- folder
+description: Detects PII patterns (emails, phones, credit cards) and computes sensitivity
+  metrics
+icon: icon.png
+name: pii_scanner
+tags:
+- Banking
+- Fraud Detection
+- GDPR
+- Privacy
+- Healthcare
+- Retail
+type: validity
+url: https://github.com/qalita-io/packs/tree/main/pii_scanner_pack
+version: 0.1.10
+visibility: public

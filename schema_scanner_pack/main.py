@@ -2,6 +2,7 @@ import json
 import pandas as pd
 from ydata_profiling import ProfileReport
 from qalita_core.pack import Pack
+import pandas as pd
 from io import StringIO
 
 # --- Chargement des données ---
@@ -19,14 +20,24 @@ else:
 ########################### Profiling and Aggregating Results
 raw_df_source = pack.df_source
 configured = pack.source_config.get("config", {}).get("table_or_query")
+
+def _load_parquet_if_path(obj):
+    try:
+        if isinstance(obj, str) and obj.lower().endswith((".parquet", ".pq")):
+            return pd.read_parquet(obj, engine="pyarrow")
+    except Exception:
+        pass
+    return obj
+
 if isinstance(raw_df_source, list):
-    if isinstance(configured, (list, tuple)) and len(configured) == len(raw_df_source):
-        items = list(zip(list(configured), raw_df_source))
+    loaded = [_load_parquet_if_path(x) for x in raw_df_source]
+    if isinstance(configured, (list, tuple)) and len(configured) == len(loaded):
+        items = list(zip(list(configured), loaded))
     else:
         base = pack.source_config["name"]
-        items = [(f"{base}_{i+1}", df) for i, df in enumerate(raw_df_source)]
+        items = [(f"{base}_{i+1}", df) for i, df in enumerate(loaded)]
 else:
-    items = [(pack.source_config["name"], raw_df_source)]
+    items = [(pack.source_config["name"], _load_parquet_if_path(raw_df_source))]
 
 for dataset_name, df_curr in items:
     print(f"Generating profile for {dataset_name}")

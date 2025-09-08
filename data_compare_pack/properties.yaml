@@ -2,21 +2,19 @@ compatible_sources:
 - mysql
 - postgresql
 - sqlite
-- mongodb
 - oracle
-- s3
-- gcs
-- azure_blob
-- hdfs
-- sftp
-- http
-- https
 - file
 - folder
-description: Compute metrics when comparing data between two sources.
+description: Compute metrics when comparing data between two sources. This pack is
+  used to compare two datasets and compute metrics such as precision, recall, f1_score,
+  etc.
 icon: icon.png
 name: data_compare
+tags:
+- Data Migration
+- ETL Validation
+- Reconciliation
 type: consistency
 url: https://github.com/qalita-io/packs/tree/main/data_compare_pack
-version: 2.0.24
+version: 2.0.39
 visibility: public

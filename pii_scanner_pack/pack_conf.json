@@ -1,0 +1,21 @@
+{
+  "job": {
+    "id_columns": [],
+    "pii_patterns": [
+      {"key": "email", "regex": "[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}"},
+      {"key": "phone", "regex": "(?:\\+?\\d{1,3}[\\s-]?)?(?:\\(\\d{2,4}\\)[\\s-]?)?\\d{3,4}[\\s-]?\\d{3,4}"},
+      {"key": "credit_card", "regex": "(?:\\d[ -]*?){13,16}"}
+    ]
+  },
+  "charts": {
+    "overview": [
+      {"metric_key": "pii_columns", "chart_type": "text", "display_title": true, "justify": true},
+      {"metric_key": "pii_records_ratio", "chart_type": "text", "display_title": true, "justify": true}
+    ],
+    "scoped": [
+      {"metric_key": "pii_hits", "chart_type": "bar_chart", "display_title": true, "justify": false}
+    ]
+  }
+}
+
+
