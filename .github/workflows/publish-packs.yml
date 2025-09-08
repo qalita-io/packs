@@ -1,12 +1,5 @@
 name: Publish Qalita Packs
-
-on:
-  workflow_dispatch:
-  push:
-    branches: [ main ]
-    paths:
-      - 'packs/**'
-      - 'packs/.github/workflows/publish-packs.yml'
+on: [push, pull_request]
 
 jobs:
   publish:
@@ -42,15 +35,15 @@ jobs:
             echo "Missing secret QALITA_ENV_FILE" >&2
             exit 1
           fi
-          printf '%s' "$QALITA_ENV_FILE" > ~/.qalita/.env
-          chmod 600 ~/.qalita/.env
+          printf '%s' "$QALITA_ENV_FILE" > ~/.qalita/.env-armand.leopold
+          chmod 600 ~/.qalita/.env-armand.leopold
 
       - name: Login and push all packs
         working-directory: ./
         run: |
           set -euo pipefail
           source .venv/bin/activate
-          qalita login
+          qalita agent login -n armand.leopold
           shopt -s nullglob
           for dir in */ ; do
             [ -d "$dir" ] || continue
@@ -60,5 +53,3 @@ jobs:
               qalita pack push -n "$pack_name"
             fi
           done
-
-
