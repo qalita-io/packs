@@ -15,5 +15,5 @@ tags:
 - SLAs
 type: timeliness
 url: https://github.com/qalita-io/packs/tree/main/timeliness_pack
-version: 2.0.13
+version: 2.0.14
 visibility: public

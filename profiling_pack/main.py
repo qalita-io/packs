@@ -5,95 +5,13 @@ from qalita_core.utils import (
     extract_variable_name,
     determine_level,
 )
+from qalita_core import sanitize_dataframe_for_parquet
 import json
 import pandas as pd
 import os
 from ydata_profiling import ProfileReport
 from datetime import datetime
 from io import StringIO
-
-# ---------------- Safe parquet handling between pandas and pyarrow ----------------
-# Some data sources contain columns with mixed Python types (e.g., int + str or bytes),
-# which causes pyarrow to error when pandas writes parquet during loading. We sanitize
-# DataFrames by decoding bytes to UTF-8 and normalizing mixed-type object columns to
-# a consistent string dtype before any parquet write occurs.
-
-def _sanitize_dataframe_for_parquet(df: pd.DataFrame) -> pd.DataFrame:
-    clean_df = df.copy()
-    # Ensure column names are strings
-    try:
-        clean_df.columns = [c if isinstance(c, str) else str(c) for c in clean_df.columns]
-    except Exception:
-        pass
-
-    for col in list(clean_df.columns):
-        series = clean_df[col]
-
-        # Decode bytes to UTF-8 strings where present
-        if pd.api.types.is_object_dtype(series):
-            try:
-                has_bytes = series.map(lambda x: isinstance(x, (bytes, bytearray))).any()
-            except Exception:
-                has_bytes = False
-            if has_bytes:
-                series = series.map(
-                    lambda x: x.decode("utf-8", errors="replace") if isinstance(x, (bytes, bytearray)) else x
-                )
-
-            # If the column can't be fully parsed as numeric, coerce to pandas string dtype
-            try:
-                _ = pd.to_numeric(series.dropna(), errors="raise")
-                # If to_numeric succeeds, keep numeric representation to avoid string inflation
-                series = pd.to_numeric(series, errors="coerce")
-            except Exception:
-                # Mixed non-numeric types or strings: cast to string dtype
-                try:
-                    series = series.astype("string")
-                except Exception:
-                    # Last resort: convert via str()
-                    series = series.map(lambda x: None if pd.isna(x) else str(x))
-
-        elif pd.api.types.is_categorical_dtype(series):
-            try:
-                series = series.astype("string")
-            except Exception:
-                pass
-
-        clean_df[col] = series
-
-    return clean_df
-
-
-# Monkeypatch pandas.DataFrame.to_parquet so that any parquet write performed by
-# underlying loaders (e.g., in qalita_core) benefits from the sanitization above.
-try:
-    _ORIG_TO_PARQUET = pd.DataFrame.to_parquet
-
-    def _safe_to_parquet(self, *args, **kwargs):  # type: ignore[override]
-        kwargs.setdefault("engine", "pyarrow")
-        try:
-            sanitized = _sanitize_dataframe_for_parquet(self)
-            return _ORIG_TO_PARQUET(sanitized, *args, **kwargs)
-        except Exception:
-            # One more attempt with a more aggressive string cast
-            fallback = self.copy()
-            for c in fallback.columns:
-                s = fallback[c]
-                if pd.api.types.is_object_dtype(s) or pd.api.types.is_categorical_dtype(s):
-                    s = s.map(
-                        lambda x: x.decode("utf-8", errors="replace") if isinstance(x, (bytes, bytearray)) else x
-                    )
-                    try:
-                        s = s.astype("string")
-                    except Exception:
-                        s = s.map(lambda x: None if pd.isna(x) else str(x))
-                fallback[c] = s
-            return _ORIG_TO_PARQUET(fallback, *args, **kwargs)
-
-    pd.DataFrame.to_parquet = _safe_to_parquet  # type: ignore[assignment]
-except Exception:
-    # If monkeypatch fails for any reason, continue without it.
-    pass
 
 # --- Chargement des données ---
 # Pour un fichier : pack.load_data("source")
@@ -150,7 +68,7 @@ for dataset_name, df in data_items:
     # Sanitize the DataFrame before profiling/serialization to avoid downstream
     # encoding/type issues with libraries expecting homogeneous column types.
     try:
-        df = _sanitize_dataframe_for_parquet(df)
+        df = sanitize_dataframe_for_parquet(df)
     except Exception:
         pass
     # Aperçu
