@@ -5,12 +5,12 @@ warnings.filterwarnings(
     category=UserWarning,
     message=r"pkg_resources is deprecated as an API",
 )
-from qalita_core.pack import Pack
-import pandas as pd
 import re
+import os
+import pandas as pd
 import datacompy
 from datetime import datetime
-import os
+from qalita_core.pack import Pack
 
 # --- Chargement des données ---
 # Pour un fichier : pack.load_data("source")

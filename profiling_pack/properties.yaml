@@ -17,5 +17,5 @@ tags:
 - Generic
 type: completeness
 url: https://github.com/qalita-io/packs/tree/main/profiling_pack
-version: 2.0.42
+version: 2.0.44
 visibility: public

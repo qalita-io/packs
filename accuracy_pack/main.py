@@ -1,5 +1,5 @@
-from qalita_core.pack import Pack
 import pandas as pd
+from qalita_core.pack import Pack
 from qalita_core.utils import determine_recommendation_level
 
 # --- Chargement des données ---
