@@ -43,7 +43,7 @@ jobs:
         run: |
           set -euo pipefail
           source .venv/bin/activate
-          qalita agent login -n armand.leopold
+          qalita agent -n armand.leopold login
           shopt -s nullglob
           for dir in */ ; do
             [ -d "$dir" ] || continue
