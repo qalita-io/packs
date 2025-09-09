@@ -8,10 +8,6 @@ Assesses the freshness of date columns and computes per-column and per-dataset t
 - For each dataset and each date column, computes `earliest_date`, `latest_date`, `days_since_earliest_date`, `days_since_latest_date` and per-column `timeliness_score`.
 - Computes a dataset `score` from average `days_since_latest_date` across selected columns.
 
-### Supported sources
-- Files: csv, xlsx
-- Databases: any SQLAlchemy-compatible
-
 ### Configuration
 - `job.source.skiprows` (int, default 0)
 - `job.compute_score_columns` (list, optional): subset of date columns used to compute dataset score.

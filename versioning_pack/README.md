@@ -8,10 +8,6 @@ Compares local dataset schema to the remote schema and decides whether to bump t
 - Calls the API to fetch the latest source version and its schema.
 - Compares local vs remote columns; if equal, keep version; otherwise, bump minor version.
 
-### Supported sources
-- Files: csv, xlsx
-- Databases: any SQLAlchemy-compatible (schema comparison uses column names only).
-
 ### Configuration
 - `QALITA_AGENT_TOKEN` and `QALITA_AGENT_ENDPOINT` via env for API access.
 - `source_conf.json` must contain the `id` used by the API.

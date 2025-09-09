@@ -14,11 +14,6 @@ Identifies univariate and multivariate outliers and computes normality scores pe
 | `jobs.id_columns`           | `list` | no       | `[]`    | The list of columns to be used as an identifier.                                                                                 |
 | `jobs.outlier_threshold`    | `int`  | no       | `0.5`   | The threshold for detecting outliers based on the inlier score `inlier_score = 1 - scores / (scores.max() + epsilon)`.           |
 
-### Supported sources
-
-- Files: csv, xlsx
-- Databases: any SQLAlchemy-compatible
-
 ## Analysis 🕵️‍♂️
 
 The pack assesses the data and computes the following metrics:

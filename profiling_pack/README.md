@@ -11,10 +11,6 @@ Profiles your dataset(s) using `ydata-profiling` and produces comprehensive metr
   - Extracts warnings from the profiling HTML as recommendations with levels.
   - Builds schema entries for each column and dataset.
 
-### Supported sources
-- Files: csv, xlsx
-- Databases: any SQLAlchemy-compatible (e.g., PostgreSQL, MySQL, MSSQL, Oracle, etc.).
-
 ### Configuration
 - `job.source.skiprows` (int, default 0): number of rows to skip when reading files.
 - `source.config.table_or_query` (string | list | `*`): database table name, SQL query, list of tables, or `*` to scan all tables.

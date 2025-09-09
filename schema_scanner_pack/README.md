@@ -7,10 +7,6 @@ Generates a minimal profile and extracts schema (column list) per dataset, emitt
 - Loads the source as a DataFrame or list of DataFrames.
 - For each dataset, runs a minimal `ydata-profiling` report, writes HTML/JSON, and extracts variable names to build schema entries.
 
-### Supported sources
-- Files: csv, xlsx
-- Databases: any SQLAlchemy-compatible
-
 ### Configuration
 - `source.config.table_or_query` (string | list | `*`) for databases.
 
