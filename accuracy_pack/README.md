@@ -8,10 +8,6 @@ Assesses decimal precision consistency of float columns and computes per-column 
 - Emits `decimal_precision` (max decimals), `proportion_score` (share with most common decimal count), and dataset `score` (mean of per-column proportions).
 - Emits recommendations when `proportion_score` is below a threshold.
 
-### Supported sources
-- Files: csv, xlsx
-- Databases: any SQLAlchemy-compatible
-
 ### Configuration
 - `job.source.skiprows` (int, default 0)
 - Optional thresholds are handled inside the pack logic.

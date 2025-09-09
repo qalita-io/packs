@@ -59,7 +59,7 @@ id_columns = pack.pack_config["job"].get("id_columns", [])
 for dataset_label, df_curr in items:
     # Fill missing numeric with mean
     for column in df_curr.columns:
-        if np.issubdtype(df_curr[column].dtype, np.number):
+        if pd.api.types.is_numeric_dtype(df_curr[column]):
             df_curr[column] = df_curr[column].fillna(df_curr[column].mean())
 
     # Drop still-NaN columns
@@ -71,7 +71,7 @@ for dataset_label, df_curr in items:
     # Univariate
     univariate_outliers = {}
     for column in [col for col in df_curr.columns if col not in id_columns]:
-        if np.issubdtype(df_curr[column].dtype, np.number):
+        if pd.api.types.is_numeric_dtype(df_curr[column]):
             clf = KNN()
             clf.fit(df_curr[[column]])
             scores = clf.decision_function(df_curr[[column]])
