@@ -4,6 +4,8 @@ compatible_sources:
 - sqlite
 - oracle
 - file
+- csv
+- excel
 - folder
 description: Run Great Expectations test suites on datasets and export pass/fail metrics
   and recommendations

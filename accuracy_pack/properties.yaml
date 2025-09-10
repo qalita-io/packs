@@ -3,7 +3,9 @@ compatible_sources:
 - postgresql
 - sqlite
 - oracle
+- excel
 - file
+- csv
 - folder
 description: Compute decimal accuracy metrics for float columns
 icon: icon.png

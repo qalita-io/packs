@@ -4,6 +4,8 @@ compatible_sources:
 - sqlite
 - oracle
 - file
+- csv
+- excel
 - folder
 description: Scan schema of a dataset and compute metrics such as the number of columns,
   the number of rows, the number of unique values, the number of null values, the

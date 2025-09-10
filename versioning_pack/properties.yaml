@@ -1,6 +1,12 @@
 compatible_sources:
 - folder
+- mysql
+- postgresql
+- sqlite
 - oracle
+- csv
+- excel
+- file
 description: Determine the version and schema changes. This pack is used to determine
   the version and schema changes of a dataset.
 icon: icon.png

@@ -4,6 +4,8 @@ compatible_sources:
 - sqlite
 - oracle
 - file
+- csv
+- excel
 - folder
 description: Run dbt tests and expose pass/fail metrics by parsing run_results.json
 icon: icon.png
