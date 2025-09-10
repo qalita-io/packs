@@ -3,6 +3,8 @@ compatible_sources:
 - postgresql
 - sqlite
 - oracle
+- csv
+- excel
 - file
 - folder
 description: Detects PII patterns (emails, phones, credit cards) and computes sensitivity

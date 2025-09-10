@@ -4,6 +4,8 @@ compatible_sources:
 - sqlite
 - oracle
 - file
+- csv
+- excel
 - folder
 description: Validate dataset compliance against HL7 FHIR resources (presence,formats,enumerations,basic
   referential checks)

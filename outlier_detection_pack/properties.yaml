@@ -4,6 +4,8 @@ compatible_sources:
 - sqlite
 - oracle
 - file
+- csv
+- excel
 - folder
 description: Automatic Outliers Detection using pyod. This pack is used to detect
   outliers in a dataset using pyod.

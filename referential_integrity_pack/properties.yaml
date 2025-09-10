@@ -5,6 +5,8 @@ compatible_sources:
 - oracle
 - file
 - folder
+- csv
+- excel
 description: Validates referential integrity across datasets/tables based on configured
   foreign keys
 icon: icon.png

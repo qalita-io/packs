@@ -4,6 +4,8 @@ compatible_sources:
 - sqlite
 - oracle
 - file
+- csv
+- excel
 - folder
 description: Monitors statistical drift between a reference dataset and a current
   dataset for numeric columns

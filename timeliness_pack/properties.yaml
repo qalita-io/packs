@@ -4,6 +4,8 @@ compatible_sources:
 - sqlite
 - oracle
 - file
+- csv
+- excel
 - folder
 description: Check freshness from date columns. This pack is used to check the freshness
   of a dataset based on the date columns.

@@ -5,6 +5,8 @@ compatible_sources:
 - oracle
 - file
 - folder
+- csv
+- excel
 description: Checks with Soda Check Library. This pack is used to check the data quality
   of a dataset using Soda Check Library.
 icon: icon.png
