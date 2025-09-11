@@ -5,6 +5,8 @@ compatible_sources:
 - oracle
 - file
 - folder
+- csv
+- excel
 description: Checks with Soda Check Library. This pack is used to check the data quality
   of a dataset using Soda Check Library.
 icon: icon.png
@@ -15,5 +17,5 @@ tags:
 - Generic
 type: validity
 url: https://github.com/qalita-io/packs/tree/main/soda_pack
-version: 1.0.5
+version: 1.0.7
 visibility: public

@@ -8,18 +8,9 @@ Runs data quality checks using Soda Core on your dataset(s) and computes per-che
 - For each dataset, registers it in Soda, loads `checks.yaml`, executes the scan, and extracts metrics from Soda results.
 - Computes a dataset score as proportion of passed checks; emits per-column completion scores and recommendations for failed checks.
 
-### Supported sources
-- Files: csv, xlsx
-- Databases: any SQLAlchemy-compatible
-
 ### Configuration
 - Provide `checks.yaml` in the pack folder.
 - `source.config.table_or_query` (string | list | `*`) for databases.
-
-### Usage
-1) Configure `source_conf.json` and add your `checks.yaml`.
-2) For databases, set `table_or_query` (string, list, or `*`).
-3) Run the pack; it executes checks per dataset and aggregates outputs.
 
 ### Outputs
 - `metrics.json`: includes per-check metrics, dataset score (`score`), `check_passed`, `check_failed`, and per-column `check_completion_score`.

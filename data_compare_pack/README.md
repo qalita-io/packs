@@ -8,10 +8,6 @@ Compares a source dataset against a target dataset using DataComPy and produces 
 - Selects columns to compare from `job.compare_col_list` or uses the intersection of columns.
 - Computes metrics per pairing: `precision`, `recall`, `f1_score`, and a `score` based on mismatches ratio; emits dataset-scoped counts and an optional formatted mismatches table.
 
-### Supported sources
-- Files: csv, xlsx
-- Databases: any SQLAlchemy-compatible
-
 ### Configuration
 - `job.compare_col_list` (list, optional): columns to compare.
 - `job.id_columns` (list): join keys for comparison.

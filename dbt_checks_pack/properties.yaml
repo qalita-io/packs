@@ -4,6 +4,8 @@ compatible_sources:
 - sqlite
 - oracle
 - file
+- csv
+- excel
 - folder
 description: Run dbt tests and expose pass/fail metrics by parsing run_results.json
 icon: icon.png
@@ -15,5 +17,5 @@ tags:
 - Testing
 type: validity
 url: https://github.com/qalita-io/packs/tree/main/dbt_checks_pack
-version: 0.1.10
+version: 0.1.12
 visibility: public

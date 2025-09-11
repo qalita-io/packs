@@ -29,6 +29,12 @@
             },
             {
                 "metric_key": "timeliness_score",
+                "chart_type": "text",
+                "display_title": true,
+                "justify": true
+            },
+            {
+                "metric_key": "timeliness_score",
                 "chart_type": "spark_area_chart",
                 "display_title": false
             }

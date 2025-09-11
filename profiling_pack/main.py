@@ -6,6 +6,11 @@ from qalita_core.utils import (
     determine_level,
 )
 from qalita_core import sanitize_dataframe_for_parquet
+from qalita_core.aggregation import (
+    detect_chunked_from_items,
+    CompletenessAggregator,
+    normalize_and_dedupe_recommendations,
+)
 import json
 import pandas as pd
 import os
@@ -53,16 +58,30 @@ if isinstance(raw_df_source, list):
         names = list(configured_table_or_query)
         if len(names) != len(loaded_items):
             names = None
+    auto_named = False
     if names is None:
         names = [f"{dataset_scope_name}_{i+1}" for i in range(len(loaded_items))]
+        auto_named = True
     data_items = list(zip(names, loaded_items))
 else:
+    auto_named = False
+    common_base_detected = False
     data_items = [(dataset_scope_name, _load_parquet_if_path(raw_df_source))]
 
 print(f"Generating profile for {len(data_items)} dataset(s)")
 
 # Conteneurs globaux si besoin d'agréger
 all_alerts_records = []
+
+# Détection centrale des chunks
+raw_items_list = raw_df_source if isinstance(raw_df_source, list) else [raw_df_source]
+names_for_detect = names if (isinstance(raw_df_source, list)) else None
+treat_chunks_as_one, auto_named, common_base_detected = detect_chunked_from_items(
+    raw_items_list, names_for_detect, dataset_scope_name
+)
+
+# Accumulateur d'agrégation commun
+comp_agg = CompletenessAggregator()
 
 for dataset_name, df in data_items:
     # Sanitize the DataFrame before profiling/serialization to avoid downstream
@@ -113,26 +132,30 @@ for dataset_name, df in data_items:
         print(f"No tables found in the HTML report for {dataset_name}: {e}")
         tables = [pd.DataFrame()]
 
-    ############################ Metrics (par dataset)
-    # Scores de complétude par colonne
-    for col in df.columns:
-        non_null_count = max(df[col].notnull().sum(), 0)
-        total_count = max(len(df), 1)
-        completeness_score = round(non_null_count / total_count, 2)
-        pack.metrics.data.append(
-            {
-                "key": "completeness_score",
-                "value": str(completeness_score),
-                "scope": {
-                    "perimeter": "column",
-                    "value": col,
-                    "parent_scope": {
-                        "perimeter": "dataset",
-                        "value": dataset_name,
+    ############################ Metrics (par dataset ou agrégé)
+    # Accumuler pour agrégation globale si chunking détecté
+    if treat_chunks_as_one:
+        comp_agg.add_df(df)
+    else:
+        # Scores de complétude par colonne (mode multi-datasets)
+        for col in df.columns:
+            non_null_count = max(df[col].notnull().sum(), 0)
+            total_count = max(len(df), 1)
+            completeness_score = round(non_null_count / total_count, 2)
+            pack.metrics.data.append(
+                {
+                    "key": "completeness_score",
+                    "value": str(completeness_score),
+                    "scope": {
+                        "perimeter": "column",
+                        "value": col,
+                        "parent_scope": {
+                            "perimeter": "dataset",
+                            "value": dataset_name,
+                        },
                     },
-                },
-            }
-        )
+                }
+            )
 
     # Charger le JSON du rapport pour extraire les métriques globales et variables
     print(f"Load {dataset_name}_report.json")
@@ -140,75 +163,79 @@ for dataset_name, df in data_items:
         report = json.load(file)
 
     general_data = denormalize(report["table"])
-    for key, value in general_data.items():
-        if pack.source_config["type"] == "database":
-            entry = {
-                "key": key,
-                "value": round_if_numeric(value),
-                "scope": {
-                    "perimeter": "dataset",
-                    "value": dataset_name,
-                    "parent_scope": {
-                        "perimeter": "database",
-                        "value": pack.source_config["name"],
-                    },
-                },
-            }
-        else:
-            entry = {
-                "key": key,
-                "value": round_if_numeric(value),
-                "scope": {"perimeter": "dataset", "value": dataset_name},
-            }
-        pack.metrics.data.append(entry)
-
-    variables_data = report["variables"]
-    for variable_name, attributes in variables_data.items():
-        for attr_name, attr_value in attributes.items():
-            entry = {
-                "key": attr_name,
-                "value": round_if_numeric(attr_value),
-                "scope": {
-                    "perimeter": "column",
-                    "value": variable_name,
-                    "parent_scope": {
+    if not treat_chunks_as_one:
+        for key, value in general_data.items():
+            if pack.source_config["type"] == "database":
+                entry = {
+                    "key": key,
+                    "value": round_if_numeric(value),
+                    "scope": {
                         "perimeter": "dataset",
                         "value": dataset_name,
+                        "parent_scope": {
+                            "perimeter": "database",
+                            "value": pack.source_config["name"],
+                        },
                     },
-                },
-            }
+                }
+            else:
+                entry = {
+                    "key": key,
+                    "value": round_if_numeric(value),
+                    "scope": {"perimeter": "dataset", "value": dataset_name},
+                }
             pack.metrics.data.append(entry)
 
-    # Score basé sur p_cells_missing (directement depuis general_data)
-    try:
-        p_cells_missing = float(general_data.get("p_cells_missing", 0) or 0)
-    except Exception:
-        p_cells_missing = 0.0
-    score_value = max(min(1 - p_cells_missing, 1), 0)
-
-    if pack.source_config["type"] == "database":
-        pack.metrics.data.append(
-            {
-                "key": "score",
-                "value": str(round(score_value, 2)),
-                "scope": {
-                    "perimeter": "dataset",
-                    "value": dataset_name,
-                    "parent_scope": {
-                        "perimeter": "database",
-                        "value": pack.source_config["name"],
+    # Variables détaillées: ne pas dupliquer si chunks; on les omet en mode agrégé
+    if not treat_chunks_as_one:
+        variables_data = report["variables"]
+        for variable_name, attributes in variables_data.items():
+            for attr_name, attr_value in attributes.items():
+                entry = {
+                    "key": attr_name,
+                    "value": round_if_numeric(attr_value),
+                    "scope": {
+                        "perimeter": "column",
+                        "value": variable_name,
+                        "parent_scope": {
+                            "perimeter": "dataset",
+                            "value": dataset_name,
+                        },
                     },
-                },
-            }
-        )
-    else:
-        pack.metrics.data.append(
-            {
-                "key": "score",
-                "value": str(round(score_value, 2)),
-                "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
-            }
-        )
+                }
+                pack.metrics.data.append(entry)
+
+    # Score basé sur p_cells_missing (directement depuis general_data)
+    if not treat_chunks_as_one:
+        try:
+            p_cells_missing = float(general_data.get("p_cells_missing", 0) or 0)
+        except Exception:
+            p_cells_missing = 0.0
+        score_value = max(min(1 - p_cells_missing, 1), 0)
+
+        if pack.source_config["type"] == "database":
+            pack.metrics.data.append(
+                {
+                    "key": "score",
+                    "value": str(round(score_value, 2)),
+                    "scope": {
+                        "perimeter": "dataset",
+                        "value": dataset_name,
+                        "parent_scope": {
+                            "perimeter": "database",
+                            "value": pack.source_config["name"],
+                        },
+                    },
+                }
+            )
+        else:
+            pack.metrics.data.append(
+                {
+                    "key": "score",
+                    "value": str(round(score_value, 2)),
+                    "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
+                }
+            )
 
     ############################ Recommendations (par dataset)
     if len(tables) > 2:
@@ -229,74 +256,73 @@ for dataset_name, df in data_items:
     all_alerts_records.extend(alerts_data.to_dict(orient="records"))
 
     ############################ Schemas (par dataset)
-    for variable_name in report["variables"].keys():
-        entry = {
-            "key": "column",
-            "value": variable_name,
-            "scope": {
-                "perimeter": "column",
+    if treat_chunks_as_one:
+        # Stocker seulement la liste unique des colonnes; on créera le schéma agrégé après la boucle
+        for variable_name in report["variables"].keys():
+            comp_agg.unique_columns.add(variable_name)
+    else:
+        for variable_name in report["variables"].keys():
+            entry = {
+                "key": "column",
                 "value": variable_name,
-                "parent_scope": {"perimeter": "dataset", "value": dataset_name},
-            },
-        }
-        pack.schemas.data.append(entry)
-
-    if pack.source_config["type"] == "database":
-        pack.schemas.data.append(
-            {
-                "key": "dataset",
-                "value": dataset_name,
                 "scope": {
-                    "perimeter": "dataset",
-                    "value": dataset_name,
-                    "parent_scope": {
-                        "perimeter": "database",
-                        "value": pack.source_config["name"],
-                    },
+                    "perimeter": "column",
+                    "value": variable_name,
+                    "parent_scope": {"perimeter": "dataset", "value": dataset_name},
                 },
             }
-        )
-    else:
-        pack.schemas.data.append(
-            {
-                "key": "dataset",
-                "value": dataset_name,
-                "scope": {"perimeter": "dataset", "value": dataset_name},
-            }
-        )
+            pack.schemas.data.append(entry)
+
+        if pack.source_config["type"] == "database":
+            pack.schemas.data.append(
+                {
+                    "key": "dataset",
+                    "value": dataset_name,
+                    "scope": {
+                        "perimeter": "dataset",
+                        "value": dataset_name,
+                        "parent_scope": {
+                            "perimeter": "database",
+                            "value": pack.source_config["name"],
+                        },
+                    },
+                }
+            )
+        else:
+            pack.schemas.data.append(
+                {
+                    "key": "dataset",
+                    "value": dataset_name,
+                    "scope": {"perimeter": "dataset", "value": dataset_name},
+                }
+            )
 
 ############################ Consolidate recommendations across datasets
-pack.recommendations.data = all_alerts_records
+if treat_chunks_as_one:
+    pack.recommendations.data = normalize_and_dedupe_recommendations(
+        all_alerts_records, dataset_scope_name
+    )
+else:
+    pack.recommendations.data = all_alerts_records
 
 ############################ Writing Results to Files
 
-# if pack.source_config["type"] == "database":
-#     pack.schemas.data.append(
-#         {
-#             "key": "database",
-#             "value": pack.source_config["name"],
-#             "scope": {"perimeter": "database", "value": pack.source_config["name"]},
-#         }
-#     )
+# En mode chunk agrégé, construire les métriques et schémas consolidés dans un périmètre unique
+if treat_chunks_as_one:
+    # Finaliser via l'agrégateur commun
+    pack.metrics.data, pack.schemas.data = comp_agg.finalize_metrics_and_schemas(
+        dataset_scope_name
+    )
 
-#     # Compute the aggregated database level completeness score from the datasets score
-#     aggregated_score = 0
-#     for metric in pack.metrics.data:
-#         if metric["key"] == "score":
-#             aggregated_score += float(metric["value"])
-#     aggregated_score /= len(df_dict)
 
-#     pack.metrics.data.append(
-#         {
-#             "key": "score",
-#             "value": str(round(aggregated_score, 2)),
-#             "scope": {"perimeter": "database", "value": pack.source_config["name"]},
-#         }
-#     )
 
 ################## Remove unwanted metrics or recommendations
     
-unwanted_keys = ["histogram"]
+unwanted_keys = [
+    "histogram",
+    "value_counts_index_sorted",
+    "value_counts_without_nan",
+]
 pack.metrics.data = [item for item in pack.metrics.data if item.get("key") not in unwanted_keys]
 
 unwanted_keys = ["Unsupported"]

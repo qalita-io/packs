@@ -5,6 +5,8 @@ compatible_sources:
 - oracle
 - file
 - folder
+- csv
+- excel
 description: Compute metrics when comparing data between two sources. This pack is
   used to compare two datasets and compute metrics such as precision, recall, f1_score,
   etc.
@@ -16,5 +18,5 @@ tags:
 - Reconciliation
 type: consistency
 url: https://github.com/qalita-io/packs/tree/main/data_compare_pack
-version: 2.0.39
+version: 2.0.43
 visibility: public

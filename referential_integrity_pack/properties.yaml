@@ -5,6 +5,8 @@ compatible_sources:
 - oracle
 - file
 - folder
+- csv
+- excel
 description: Validates referential integrity across datasets/tables based on configured
   foreign keys
 icon: icon.png
@@ -17,5 +19,5 @@ tags:
 - Customer 360
 type: consistency
 url: https://github.com/qalita-io/packs/tree/main/referential_integrity_pack
-version: 0.1.10
+version: 0.1.12
 visibility: public

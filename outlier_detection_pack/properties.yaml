@@ -4,6 +4,8 @@ compatible_sources:
 - sqlite
 - oracle
 - file
+- csv
+- excel
 - folder
 description: Automatic Outliers Detection using pyod. This pack is used to detect
   outliers in a dataset using pyod.
@@ -16,5 +18,5 @@ tags:
 - IoT
 type: reasonability
 url: https://github.com/qalita-io/packs/tree/main/outlier_detection_pack
-version: 2.0.19
+version: 2.0.27
 visibility: public

@@ -3,6 +3,8 @@ compatible_sources:
 - postgresql
 - sqlite
 - oracle
+- csv
+- excel
 - file
 - folder
 description: Detects PII patterns (emails, phones, credit cards) and computes sensitivity
@@ -18,5 +20,5 @@ tags:
 - Retail
 type: validity
 url: https://github.com/qalita-io/packs/tree/main/pii_scanner_pack
-version: 0.1.10
+version: 0.1.12
 visibility: public
