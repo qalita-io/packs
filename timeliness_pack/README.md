@@ -12,11 +12,6 @@ Assesses the freshness of date columns and computes per-column and per-dataset t
 - `job.source.skiprows` (int, default 0)
 - `job.compute_score_columns` (list, optional): subset of date columns used to compute dataset score.
 
-### Usage
-1) Configure `source_conf.json` and `pack_conf.json`.
-2) For databases, set `table_or_query` to string, list, or `*`.
-3) Run the pack.
-
 ### Outputs
 - `metrics.json`: per-column date metrics and timeliness scores, plus a per-dataset `score` and a `date_columns_count` summary.
 - `recommendations.json`: entries when latest dates are older than one year (high level).

@@ -3,6 +3,7 @@ import pandas as pd
 from qalita_core.utils import determine_recommendation_level
 from datetime import datetime
 import os
+from qalita_core.aggregation import detect_chunked_from_items, DuplicateAggregator, normalize_and_dedupe_recommendations
 
 # --- Chargement des données ---
 # Pour un fichier : pack.load_data("source")
@@ -32,14 +33,22 @@ if isinstance(raw_df_source, list):
     loaded = [_load_parquet_if_path(x) for x in raw_df_source]
     if isinstance(configured, (list, tuple)) and len(configured) == len(loaded):
         items = list(zip(list(configured), loaded))
+        names_for_detect = [str(n) for n in configured]
     else:
         base = pack.source_config["name"]
         items = [(f"{base}_{i+1}", df) for i, df in enumerate(loaded)]
+        names_for_detect = [name for name, _ in items]
 else:
     items = [(pack.source_config["name"], _load_parquet_if_path(raw_df_source))]
+    names_for_detect = None
 
-# Process each dataset independently
-for dataset_label, df_curr in items:
+raw_items_list = raw_df_source if isinstance(raw_df_source, list) else [raw_df_source]
+treat_chunks_as_one, auto_named, common_base_detected = detect_chunked_from_items(
+    raw_items_list, names_for_detect, pack.source_config["name"]
+)
+
+// Process: either per dataset or aggregate across chunks into one scope
+if treat_chunks_as_one:
     if (
         "job" in pack.pack_config
         and "compute_uniqueness_columns" in pack.pack_config["job"]
@@ -47,57 +56,87 @@ for dataset_label, df_curr in items:
     ):
         uniqueness_columns = pack.pack_config["job"]["compute_uniqueness_columns"]
     else:
-        uniqueness_columns = df_curr.columns
+        uniqueness_columns = items[0][1].columns
+    dup_agg = DuplicateAggregator(uniqueness_columns)
+    for dataset_label, df_curr in items:
+        dup_agg.add_df(df_curr)
+    metrics, recommendations = dup_agg.finalize_metrics(pack.source_config["name"])
+    pack.metrics.data.extend(metrics)
+    try:
+        score_item = next(m for m in metrics if m.get("key") == "score")
+        score_val = float(score_item.get("value", 1.0))
+        duplication_rate = 1.0 - score_val
+        if score_val < 0.9:
+            pack.recommendations.data.append(
+                {
+                    "content": f"dataset '{pack.source_config['name']}' has a duplication rate of {duplication_rate*100}% on the scope {list(uniqueness_columns)}.",
+                    "type": "Duplicates",
+                    "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
+                    "level": determine_recommendation_level(duplication_rate),
+                }
+            )
+    except StopIteration:
+        pass
+else:
+    for dataset_label, df_curr in items:
+        if (
+            "job" in pack.pack_config
+            and "compute_uniqueness_columns" in pack.pack_config["job"]
+            and len(pack.pack_config["job"]["compute_uniqueness_columns"]) > 0
+        ):
+            uniqueness_columns = pack.pack_config["job"]["compute_uniqueness_columns"]
+        else:
+            uniqueness_columns = df_curr.columns
 
-    print("Columns used for checking duplicates:", uniqueness_columns)
-    df_subset = df_curr[uniqueness_columns].copy()
-    duplicates = df_subset.duplicated()
-    total_rows = len(df_curr)
-    total_duplicates = duplicates.sum()
+        print("Columns used for checking duplicates:", uniqueness_columns)
+        df_subset = df_curr[uniqueness_columns].copy()
+        duplicates = df_subset.duplicated()
+        total_rows = len(df_curr)
+        total_duplicates = duplicates.sum()
 
-    print("[", dataset_label, "] total rows "+str(total_rows))
-    print("[", dataset_label, "] total duplicates "+str(total_duplicates))
+        print("[", dataset_label, "] total rows "+str(total_rows))
+        print("[", dataset_label, "] total duplicates "+str(total_duplicates))
 
-    duplication_score = round(total_duplicates / total_rows if total_rows > 0 else 0, 2)
-    score = 1 - duplication_score
+        duplication_score = round(total_duplicates / total_rows if total_rows > 0 else 0, 2)
+        score = 1 - duplication_score
 
-    pack.metrics.data.append(
-        {
-            "key": "score",
-            "value": str(round(score, 2)),
-            "scope": {"perimeter": "dataset", "value": dataset_label},
-        }
-    )
-    pack.metrics.data.append(
-        {
-            "key": "duplicates",
-            "value": int(total_duplicates),
-            "scope": {"perimeter": "dataset", "value": dataset_label},
-        }
-    )
-    if (
-        "job" in pack.pack_config
-        and "compute_uniqueness_columns" in pack.pack_config["job"]
-    ):
+        pack.metrics.data.append(
+            {
+                "key": "score",
+                "value": str(round(score, 2)),
+                "scope": {"perimeter": "dataset", "value": dataset_label},
+            }
+        )
         pack.metrics.data.append(
             {
                 "key": "duplicates",
                 "value": int(total_duplicates),
-                "scope": {
-                    "perimeter": "dataset",
-                    "value": ", ".join(uniqueness_columns),
-                },
+                "scope": {"perimeter": "dataset", "value": dataset_label},
             }
         )
+        if (
+            "job" in pack.pack_config
+            and "compute_uniqueness_columns" in pack.pack_config["job"]
+        ):
+            pack.metrics.data.append(
+                {
+                    "key": "duplicates",
+                    "value": int(total_duplicates),
+                    "scope": {
+                        "perimeter": "dataset",
+                        "value": ", ".join(uniqueness_columns),
+                    },
+                }
+            )
 
-    if score < 0.9:
-        recommendation = {
-            "content": f"dataset '{dataset_label}' has a duplication rate of {duplication_score*100}% on the scope {list(uniqueness_columns)}.",
-            "type": "Duplicates",
-            "scope": {"perimeter": "dataset", "value": dataset_label},
-            "level": determine_recommendation_level(duplication_score),
-        }
-        pack.recommendations.data.append(recommendation)
+        if score < 0.9:
+            recommendation = {
+                "content": f"dataset '{dataset_label}' has a duplication rate of {duplication_score*100}% on the scope {list(uniqueness_columns)}.",
+                "type": "Duplicates",
+                "scope": {"perimeter": "dataset", "value": dataset_label},
+                "level": determine_recommendation_level(duplication_score),
+            }
+            pack.recommendations.data.append(recommendation)
 
 
 pack.metrics.save()

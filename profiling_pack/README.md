@@ -90,11 +90,6 @@ Profiles your dataset(s) using `ydata-profiling` and produces comprehensive metr
 | `script_counts`              | Script counts    EX: `{'Latin': 918}`                                                              | column:Text    | `dict` of script:count              |
 | `script_char_counts`         | Script character counts    EX: `{'Latin': {'a': 918}}`                                             | column:Text    | `dict` of script:dict of char_count |
 
-### Usage
-1) Configure `source_conf.json` and `pack_conf.json`.
-2) For databases, set `table_or_query` (string, list, or `*`).
-3) Run the pack; it processes each dataset and aggregates outputs.
-
 ### Outputs
 - Files per dataset:
   - `{dataset_name}_report.html`
