@@ -28,10 +28,22 @@ source_id = pack.source_config["id"]
 token = os.getenv("QALITA_AGENT_TOKEN", api_token)
 endpoint = os.getenv("QALITA_AGENT_ENDPOINT", api_url)
 
+# Configure HTTP(S) proxy from environment if provided
+http_proxy = os.getenv("HTTP_PROXY") or os.getenv("http_proxy")
+https_proxy = os.getenv("HTTPS_PROXY") or os.getenv("https_proxy")
+proxies = None
+if http_proxy or https_proxy:
+    proxies = {}
+    if http_proxy:
+        proxies["http"] = http_proxy
+    if https_proxy:
+        proxies["https"] = https_proxy
+
 # get source infos
 response_source = requests.get(
     f"{endpoint}/sources/{source_id}",
     headers={"Authorization": f"Bearer {token}"},
+    proxies=proxies,
 )
 if response_source.status_code == 200:
     source = response_source.json()
@@ -52,6 +64,7 @@ latest_version_id = latest_version["id"]
 response_schema = requests.get(
     f"{endpoint}/schemas/{source_id}?source_version_id={latest_version_id}",
     headers={"Authorization": f"Bearer {token}"},
+    proxies=proxies,
 )
 if response_schema.status_code == 200:
     schema = response_schema.json()
