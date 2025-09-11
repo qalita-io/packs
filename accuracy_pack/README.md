@@ -12,11 +12,6 @@ Assesses decimal precision consistency of float columns and computes per-column 
 - `job.source.skiprows` (int, default 0)
 - Optional thresholds are handled inside the pack logic.
 
-### Usage
-1) Configure `source_conf.json` and `pack_conf.json`.
-2) For databases, set `table_or_query` to string, list, or `*`.
-3) Run the pack.
-
 ### Outputs
 - `metrics.json`: per-column `decimal_precision`, `proportion_score`; per-dataset `score` and `float_score` (data-point-weighted proportion).
 - `recommendations.json`: entries for columns and datasets with uneven rounding.

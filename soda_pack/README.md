@@ -12,11 +12,6 @@ Runs data quality checks using Soda Core on your dataset(s) and computes per-che
 - Provide `checks.yaml` in the pack folder.
 - `source.config.table_or_query` (string | list | `*`) for databases.
 
-### Usage
-1) Configure `source_conf.json` and add your `checks.yaml`.
-2) For databases, set `table_or_query` (string, list, or `*`).
-3) Run the pack; it executes checks per dataset and aggregates outputs.
-
 ### Outputs
 - `metrics.json`: includes per-check metrics, dataset score (`score`), `check_passed`, `check_failed`, and per-column `check_completion_score`.
 - `recommendations.json`: entries for failed checks (column- or dataset-scoped).

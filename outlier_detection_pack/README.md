@@ -30,13 +30,6 @@ The pack assesses the data and computes the following metrics:
 | `normality_score`         | The normality score for each column and the entire dataset. | Column  | `float` |
 | `outliers`                | The number of outliers detected in each column.             | Column  | `int`   |
 
-## Output 📤
-
-### Usage
-1) Configure `source_conf.json` and `pack_conf.json`.
-2) For databases, set `table_or_query` to string, list, or `*`.
-3) Run the pack.
-
 ### Outputs
 - `metrics.json`: per-column `normality_score`, `outliers`; per-dataset `normality_score_dataset`, `score`, and `outliers_table`.
 - For file sources: `{YYYYMMDD}_outlier_detection_report_{dataset}.xlsx` per dataset with detailed outliers.

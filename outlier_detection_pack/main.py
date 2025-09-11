@@ -17,6 +17,11 @@ import pandas as pd
 from datetime import datetime
 from sklearn.preprocessing import OneHotEncoder
 from pyod.models.knn import KNN
+from qalita_core.aggregation import (
+    detect_chunked_from_items,
+    OutlierAggregator,
+    normalize_and_dedupe_recommendations,
+)
 
 # --- Chargement des données ---
 # Pour un fichier : pack.load_data("source")
@@ -45,16 +50,27 @@ if isinstance(raw_df_source, list):
     loaded = [_load_parquet_if_path(x) for x in raw_df_source]
     if isinstance(configured, (list, tuple)) and len(configured) == len(loaded):
         items = list(zip(list(configured), loaded))
+        names_for_detect = [str(n) for n in configured]
     else:
         base = pack.source_config["name"]
         items = [(f"{base}_{i+1}", df) for i, df in enumerate(loaded)]
+        names_for_detect = [name for name, _ in items]
 else:
     items = [(pack.source_config["name"], _load_parquet_if_path(raw_df_source))]
+    names_for_detect = None
+
+raw_items_list = raw_df_source if isinstance(raw_df_source, list) else [raw_df_source]
+treat_chunks_as_one, auto_named, common_base_detected = detect_chunked_from_items(
+    raw_items_list, names_for_detect, pack.source_config["name"]
+)
 
 ############################ Metrics
 epsilon = 1e-7  # Small number to prevent division by zero
 outlier_threshold = pack.pack_config["job"].get("outlier_threshold", 0.5)
 id_columns = pack.pack_config["job"].get("id_columns", [])
+
+# Accumulateur partagé
+agg = OutlierAggregator()
 
 for dataset_label, df_curr in items:
     # Fill missing numeric with mean
@@ -68,6 +84,14 @@ for dataset_label, df_curr in items:
     if df_curr.isnull().values.any():
         raise ValueError("Unexpected NaN values are still present after cleaning.")
 
+    # Verify dataset has enough rows for KNN (n_neighbors < n_samples_fit)
+    knn_default_neighbors = 5
+    min_required_samples = knn_default_neighbors + 1
+    if len(df_curr) < min_required_samples:
+        raise ValueError(
+            f"[{dataset_label}] Dataset too small for KNN: at least {min_required_samples} rows required (current: {len(df_curr)})."
+        )
+
     # Univariate
     univariate_outliers = {}
     for column in [col for col in df_curr.columns if col not in id_columns]:
@@ -76,24 +100,34 @@ for dataset_label, df_curr in items:
             clf.fit(df_curr[[column]])
             scores = clf.decision_function(df_curr[[column]])
             inlier_score = 1 - scores / (scores.max() + epsilon)
-            pack.metrics.data.append(
-                {
-                    "key": "normality_score",
-                    "value": round(inlier_score.mean().item(), 2),
-                    "scope": {"perimeter": "column", "value": column, "parent_scope": {"perimeter": "dataset", "value": dataset_label}},
-                }
-            )
+            col_mean = float(inlier_score.mean().item())
+            if treat_chunks_as_one:
+                agg.add_column_stats(
+                    column=column,
+                    mean_normality=col_mean,
+                    outlier_count=int((inlier_score < outlier_threshold).sum()),
+                    rows=len(df_curr),
+                )
+            else:
+                pack.metrics.data.append(
+                    {
+                        "key": "normality_score",
+                        "value": round(col_mean, 2),
+                        "scope": {"perimeter": "column", "value": column, "parent_scope": {"perimeter": "dataset", "value": dataset_label}},
+                    }
+                )
             outliers = df_curr[[column]][inlier_score < outlier_threshold].copy()
             univariate_outliers[column] = outliers
             outlier_count = len(outliers)
-            pack.metrics.data.append(
-                {
-                    "key": "outliers",
-                    "value": outlier_count,
-                    "scope": {"perimeter": "column", "value": column, "parent_scope": {"perimeter": "dataset", "value": dataset_label}},
-                }
-            )
-            if outlier_count > 0:
+            if not treat_chunks_as_one:
+                pack.metrics.data.append(
+                    {
+                        "key": "outliers",
+                        "value": outlier_count,
+                        "scope": {"perimeter": "column", "value": column, "parent_scope": {"perimeter": "dataset", "value": dataset_label}},
+                    }
+                )
+            if outlier_count > 0 and not treat_chunks_as_one:
                 pack.recommendations.data.append(
                     {
                         "content": f"Column '{column}' has {outlier_count} outliers.",
@@ -124,61 +158,70 @@ for dataset_label, df_curr in items:
         scores = clf.decision_function(df_for_multivariate)
         inlier_score = 1 - scores / (scores.max() + epsilon)
         multivariate_outliers = df_curr.loc[inlier_score < outlier_threshold].copy()
-        pack.metrics.data.append(
-            {
-                "key": "outliers",
-                "value": len(multivariate_outliers),
-                "scope": {"perimeter": "dataset", "value": dataset_label},
-            }
-        )
-        pack.metrics.data.append(
-            {
-                "key": "normality_score_dataset",
-                "value": round(inlier_score.mean().item(), 2),
-                "scope": {"perimeter": "dataset", "value": dataset_label},
-            }
-        )
-        pack.metrics.data.append(
-            {
-                "key": "score",
-                "value": str(round(inlier_score.mean().item(), 2)),
-                "scope": {"perimeter": "dataset", "value": dataset_label},
-            }
-        )
+        if treat_chunks_as_one:
+            agg.add_dataset_stats(
+                mean_normality=float(inlier_score.mean().item()),
+                rows=len(df_curr),
+                multivariate_outliers_count=int(len(multivariate_outliers)),
+            )
+        else:
+            pack.metrics.data.append(
+                {
+                    "key": "outliers",
+                    "value": len(multivariate_outliers),
+                    "scope": {"perimeter": "dataset", "value": dataset_label},
+                }
+            )
+            pack.metrics.data.append(
+                {
+                    "key": "normality_score_dataset",
+                    "value": round(inlier_score.mean().item(), 2),
+                    "scope": {"perimeter": "dataset", "value": dataset_label},
+                }
+            )
+            pack.metrics.data.append(
+                {
+                    "key": "score",
+                    "value": str(round(inlier_score.mean().item(), 2)),
+                    "scope": {"perimeter": "dataset", "value": dataset_label},
+                }
+            )
     except ValueError as e:
         print(f"[{dataset_label}] Error fitting the model: {e}")
 
 
     total_multivariate_outliers = len(multivariate_outliers)
     total_outliers_count = total_univariate_outliers
-    pack.metrics.data.append(
-        {
-            "key": "total_outliers_count",
-            "value": total_outliers_count,
-            "scope": {"perimeter": "dataset", "value": dataset_label},
-        }
-    )
+    if not treat_chunks_as_one:
+        pack.metrics.data.append(
+            {
+                "key": "total_outliers_count",
+                "value": total_outliers_count,
+                "scope": {"perimeter": "dataset", "value": dataset_label},
+            }
+        )
 
 
     # Define a threshold for considering a data point as an outlier (per dataset loop)
     normality_threshold = pack.pack_config["job"]["normality_threshold"]
 
     # Univariate Outlier Recommendations per dataset
-    for item in [m for m in pack.metrics.data if m["key"] == "normality_score"]:
-        scope = item.get("scope", {})
-        parent = scope.get("parent_scope", {})
-        if parent.get("value") != dataset_label:
-            continue
-        if item["value"] < normality_threshold:
-            column_name = scope.get("value")
-            pack.recommendations.data.append(
-                {
-                    "content": f"Column '{column_name}' has a normality score of {item['value']*100}%.",
-                    "type": "Outliers",
-                    "scope": {"perimeter": "column", "value": column_name, "parent_scope": {"perimeter": "dataset", "value": dataset_label}},
-                    "level": determine_recommendation_level(1 - item["value"]),
-                }
-            )
+    if not treat_chunks_as_one:
+        for item in [m for m in pack.metrics.data if m["key"] == "normality_score"]:
+            scope = item.get("scope", {})
+            parent = scope.get("parent_scope", {})
+            if parent.get("value") != dataset_label:
+                continue
+            if item["value"] < normality_threshold:
+                column_name = scope.get("value")
+                pack.recommendations.data.append(
+                    {
+                        "content": f"Column '{column_name}' has a normality score of {item['value']*100}%.",
+                        "type": "Outliers",
+                        "scope": {"perimeter": "column", "value": column_name, "parent_scope": {"perimeter": "dataset", "value": dataset_label}},
+                        "level": determine_recommendation_level(1 - item["value"]),
+                    }
+                )
 
     # Multivariate Outlier Recommendation per dataset
     dataset_normality_score = next(
@@ -186,23 +229,54 @@ for dataset_label, df_curr in items:
         None,
     )
     if dataset_normality_score is not None and dataset_normality_score < normality_threshold:
+        if not treat_chunks_as_one:
+            pack.recommendations.data.append(
+                {
+                    "content": f"The dataset '{dataset_label}' has a normality score of {dataset_normality_score*100}%.",
+                    "type": "Outliers",
+                    "scope": {"perimeter": "dataset", "value": dataset_label},
+                    "level": determine_recommendation_level(1 - dataset_normality_score),
+                }
+            )
+
+    if treat_chunks_as_one:
+        # Accumulations d'exports conservées localement puis rassemblées en fin
+        all_univariate_outliers = pd.DataFrame()
+        for column, outliers in univariate_outliers.items():
+            outliers_with_id = df_curr.loc[outliers.index, id_columns + [column]].copy()
+            outliers_with_id["value"] = outliers_with_id[column]
+            outliers_with_id["OutlierAttribute"] = column
+            outliers_with_id["index"] = outliers_with_id.index
+            outliers_with_id = outliers_with_id[id_columns + ["index", "OutlierAttribute", "value"]]
+            all_univariate_outliers = pd.concat([all_univariate_outliers, outliers_with_id], ignore_index=True)
+
+        all_univariate_outliers_simple = pd.DataFrame()
+        for column, outliers in univariate_outliers.items():
+            outliers_with_id = df_curr.loc[outliers.index, id_columns + [column]].copy()
+            outliers_with_id["OutlierAttribute"] = column
+            outliers_with_id["index"] = outliers_with_id.index
+            all_univariate_outliers_simple = pd.concat([all_univariate_outliers_simple, outliers_with_id], ignore_index=True)
+
+        if not hasattr(agg, "_exports_full"):
+            agg._exports_full = []  # type: ignore[attr-defined]
+            agg._exports_simple = []  # type: ignore[attr-defined]
+            agg._exports_mv = []  # type: ignore[attr-defined]
+        agg._exports_full.append(all_univariate_outliers)  # type: ignore[attr-defined]
+        agg._exports_simple.append(all_univariate_outliers_simple)  # type: ignore[attr-defined]
+        mv = multivariate_outliers.copy()
+        mv["index"] = mv.index
+        mv["OutlierAttribute"] = "Multivariate"
+        mv.reset_index(drop=True, inplace=True)
+        agg._exports_mv.append(mv)  # type: ignore[attr-defined]
+    else:
         pack.recommendations.data.append(
             {
-                "content": f"The dataset '{dataset_label}' has a normality score of {dataset_normality_score*100}%.",
+                "content": f"The dataset '{dataset_label}' has a total of {total_outliers_count} outliers. Check them in output file.",
                 "type": "Outliers",
                 "scope": {"perimeter": "dataset", "value": dataset_label},
-                "level": determine_recommendation_level(1 - dataset_normality_score),
+                "level": determine_recommendation_level(total_outliers_count / max(1, len(df_curr))),
             }
         )
-
-    pack.recommendations.data.append(
-        {
-            "content": f"The dataset '{dataset_label}' has a total of {total_outliers_count} outliers. Check them in output file.",
-            "type": "Outliers",
-            "scope": {"perimeter": "dataset", "value": dataset_label},
-            "level": determine_recommendation_level(total_outliers_count / max(1, len(df_curr))),
-        }
-    )
 
     ####################### Export per dataset
     # Step 1: Compile Univariate Outliers
@@ -266,21 +340,53 @@ for dataset_label, df_curr in items:
     )
     all_outliers = all_outliers[id_and_other_columns]
 
-    # Step 4: Save to Excel per dataset
+    # Step 4: Save to Excel per dataset (sauf si agrégation, alors après la boucle)
+    if not treat_chunks_as_one:
+        if pack.source_config["type"] == "file":
+            source_file_dir = os.path.dirname(pack.source_config["config"]["path"])
+            current_date = datetime.now().strftime("%Y%m%d")
+            excel_file_name = (
+                f"{current_date}_outlier_detection_report_{dataset_label}.xlsx"
+            )
+            excel_file_path = os.path.join(source_file_dir, excel_file_name)
+            with pd.ExcelWriter(excel_file_path, engine="xlsxwriter") as writer:
+                all_univariate_outliers.to_excel(writer, sheet_name="Univariate Outliers", index=False)
+                multivariate_outliers.to_excel(writer, sheet_name="Multivariate Outliers", index=False)
+                all_outliers.to_excel(writer, sheet_name="All Outliers", index=False)
+            print(f"Outliers report saved to {excel_file_path}")
+
+# Post-traitement: si agrégation, construire métriques/recommandations/export sur un périmètre unique
+if treat_chunks_as_one:
+    root_name = pack.source_config["name"]
+    # Finaliser via l'agrégateur partagé
+    normality_threshold = pack.pack_config["job"]["normality_threshold"]
+    metrics, recommendations = agg.finalize_metrics_and_recommendations(
+        root_dataset_name=root_name, normality_threshold=normality_threshold
+    )
+    pack.metrics.data.extend(metrics)
+    pack.recommendations.data.extend(recommendations)
+
+    # Normaliser/dédupliquer les recommandations si besoin
+    pack.recommendations.data = normalize_and_dedupe_recommendations(
+        pack.recommendations.data, root_name
+    )
+
+    # Excel unique
     if pack.source_config["type"] == "file":
         source_file_dir = os.path.dirname(pack.source_config["config"]["path"])
         current_date = datetime.now().strftime("%Y%m%d")
-        excel_file_name = (
-            f"{current_date}_outlier_detection_report_{dataset_label}.xlsx"
-        )
+        excel_file_name = f"{current_date}_outlier_detection_report_{root_name}.xlsx"
         excel_file_path = os.path.join(source_file_dir, excel_file_name)
+        exports_full = getattr(agg, "_exports_full", [])  # type: ignore[attr-defined]
+        exports_simple = getattr(agg, "_exports_simple", [])  # type: ignore[attr-defined]
+        exports_mv = getattr(agg, "_exports_mv", [])  # type: ignore[attr-defined]
+        all_univariate_outliers = pd.concat(exports_full, ignore_index=True) if exports_full else pd.DataFrame()
+        all_univariate_outliers_simple = pd.concat(exports_simple, ignore_index=True) if exports_simple else pd.DataFrame()
+        all_multivariate = pd.concat(exports_mv, ignore_index=True) if exports_mv else pd.DataFrame()
+        all_outliers = pd.concat([all_univariate_outliers_simple, all_multivariate], ignore_index=True)
         with pd.ExcelWriter(excel_file_path, engine="xlsxwriter") as writer:
-            all_univariate_outliers.to_excel(
-                writer, sheet_name="Univariate Outliers", index=False
-            )
-            multivariate_outliers.to_excel(
-                writer, sheet_name="Multivariate Outliers", index=False
-            )
+            all_univariate_outliers.to_excel(writer, sheet_name="Univariate Outliers", index=False)
+            all_multivariate.to_excel(writer, sheet_name="Multivariate Outliers", index=False)
             all_outliers.to_excel(writer, sheet_name="All Outliers", index=False)
         print(f"Outliers report saved to {excel_file_path}")
 

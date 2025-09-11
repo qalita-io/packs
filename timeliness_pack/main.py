@@ -4,6 +4,7 @@ from dateutil.parser import parse
 from datetime import datetime
 import re
 from qalita_core.pack import Pack
+from qalita_core.aggregation import detect_chunked_from_items, TimelinessAggregator, normalize_and_dedupe_recommendations
 import pandas as pd
 
 # --- Chargement des données ---
@@ -94,12 +95,21 @@ if isinstance(raw_df_source, list):
     loaded = [_load_parquet_if_path(x) for x in raw_df_source]
     if isinstance(names, (list, tuple)) and len(names) == len(loaded):
         dataset_items = list(zip(list(names), loaded))
+        names_for_detect = [str(n) for n in names]
     else:
         base = pack.source_config["name"]
         dataset_items = [(f"{base}_{i+1}", df) for i, df in enumerate(loaded)]
+        names_for_detect = [name for name, _ in dataset_items]
 else:
     dataset_items = [(pack.source_config["name"], _load_parquet_if_path(raw_df_source))]
+    names_for_detect = None
 
+raw_items_list = raw_df_source if isinstance(raw_df_source, list) else [raw_df_source]
+treat_chunks_as_one, auto_named, common_base_detected = detect_chunked_from_items(
+    raw_items_list, names_for_detect, pack.source_config["name"]
+)
+
+tim_agg = TimelinessAggregator()
 for dataset_label, df_curr in dataset_items:
     for column in df_curr.columns:
         unique_values = df_curr[column].dropna().unique()
@@ -110,45 +120,11 @@ for dataset_label, df_curr in dataset_items:
 
         if "year_only" in date_type:
             year_data = df_curr[column].astype(int)
-            earliest_year = year_data.min()
-            latest_year = year_data.max()
-            current_year = datetime.now().year
-            timedelta_latest_year = (current_year - latest_year) * 365
-            timedelta_earliest_year = (current_year - earliest_year) * 365
-            timeliness_score_year = calculate_timeliness_score(timedelta_latest_year)
-            pack.metrics.data.extend(
-                [
-                    {
-                        "key": "earliest_year",
-                        "value": str(earliest_year),
-                        "scope": {"perimeter": "column", "value": column, "parent_scope": {"perimeter": "dataset", "value": dataset_label}},
-                    },
-                    {
-                        "key": "latest_year",
-                        "value": str(latest_year),
-                        "scope": {"perimeter": "column", "value": column, "parent_scope": {"perimeter": "dataset", "value": dataset_label}},
-                    },
-                    {
-                        "key": "days_since_earliest_year",
-                        "value": str(timedelta_earliest_year),
-                        "scope": {"perimeter": "column", "value": column, "parent_scope": {"perimeter": "dataset", "value": dataset_label}},
-                    },
-                    {
-                        "key": "days_since_latest_year",
-                        "value": str(timedelta_latest_year),
-                        "scope": {"perimeter": "column", "value": column, "parent_scope": {"perimeter": "dataset", "value": dataset_label}},
-                    },
-                    {
-                        "key": "timeliness_score",
-                        "value": str(round(timeliness_score_year, 2)),
-                        "scope": {"perimeter": "column", "value": column, "parent_scope": {"perimeter": "dataset", "value": dataset_label}},
-                    },
-                ]
-            )
-
+            earliest_year = int(year_data.min())
+            latest_year = int(year_data.max())
+            tim_agg.add_year_obs(column, earliest_year, latest_year)
         elif True in date_type:
             converted = safe_to_datetime(df_curr[column])
-            # Skip if no valid dates after coercion
             if not converted.notna().any():
                 continue
             df_curr[column] = converted
@@ -157,37 +133,7 @@ for dataset_label, df_curr in dataset_items:
             latest_date = converted.max()
             if pd.isnull(earliest_date) or pd.isnull(latest_date):
                 continue
-            timedelta_latest = (datetime.now() - latest_date).days
-            timedelta_earliest = (datetime.now() - earliest_date).days
-            date_info_keys = [
-                "earliest_date",
-                "latest_date",
-                "days_since_earliest_date",
-                "days_since_latest_date",
-            ]
-            date_info_values = [
-                (earliest_date.strftime("%Y-%m-%d") if earliest_date and earliest_date is not pd.NaT else None),
-                (latest_date.strftime("%Y-%m-%d") if latest_date and latest_date is not pd.NaT else None),
-                (timedelta_earliest if earliest_date and earliest_date is not pd.NaT else None),
-                (timedelta_latest if latest_date and latest_date is not pd.NaT else None),
-            ]
-            for key, value in zip(date_info_keys, date_info_values):
-                pack.metrics.data.append(
-                    {
-                        "key": key,
-                        "value": str(value) if value is not None else "N/A",
-                        "scope": {"perimeter": "column", "value": column, "parent_scope": {"perimeter": "dataset", "value": dataset_label}},
-                    }
-                )
-            if timedelta_latest > 365:
-                pack.recommendations.data.append(
-                    {
-                        "content": f"The latest date in column '{column}' is more than one year old.",
-                        "type": "Latest Date far in the past",
-                        "scope": {"perimeter": "column", "value": column, "parent_scope": {"perimeter": "dataset", "value": dataset_label}},
-                        "level": "high",
-                    }
-                )
+            tim_agg.add_date_obs(column, earliest_date, latest_date)
 
 ############################ (moved) Dataset score will be computed after column timeliness_score
 
@@ -203,7 +149,17 @@ pack.metrics.data.append(
 
 ############################ Compute timeliness_score for Each Column
 
-if date_columns_count > 0:
+if date_columns_count > 0 and treat_chunks_as_one:
+    compute_score_columns = pack.pack_config.get("job", {}).get("compute_score_columns")
+    metrics, recommendations = tim_agg.finalize_metrics(
+        dataset_scope_name=pack.source_config["name"],
+        compute_score_columns=compute_score_columns,
+        calc_timeliness_score=calculate_timeliness_score,
+    )
+    pack.metrics.data.extend(metrics)
+    pack.recommendations.data.extend(recommendations)
+elif date_columns_count > 0:
+    # (legacy per-dataset behavior)
     # Iterate through metrics_data and calculate timeliness_score for each column
     for item in pack.metrics.data:
         if item["key"] == "days_since_latest_date":
@@ -214,8 +170,6 @@ if date_columns_count > 0:
             )
             days_since_latest = int(item["value"])
             timeliness_score = calculate_timeliness_score(days_since_latest)
-
-            # Append timeliness_score to metrics_data
             pack.metrics.data.append(
                 {
                     "key": "timeliness_score",
@@ -230,20 +184,15 @@ if date_columns_count > 0:
 
 ############################ Compute Dataset Score Based on Average timeliness_score
 
-if date_columns_count > 0:
+if date_columns_count > 0 and not treat_chunks_as_one:
     compute_score_columns = pack.pack_config.get("job", {}).get("compute_score_columns")
-    # Treat missing or empty list as "use all columns"
     if not compute_score_columns:
         compute_score_columns = None
-
-    # Collect column timeliness_score metrics
     ts_metrics = [
         m
         for m in pack.metrics.data
-        if m.get("key") == "timeliness_score"
-        and m.get("scope", {}).get("perimeter") == "column"
+        if m.get("key") == "timeliness_score" and m.get("scope", {}).get("perimeter") == "column"
     ]
-
     dataset_to_scores = {}
     for m in ts_metrics:
         scope = m.get("scope", {})
@@ -255,18 +204,11 @@ if date_columns_count > 0:
             except Exception:
                 continue
             dataset_to_scores.setdefault(dataset_label, []).append(score_value)
-
     for dataset_label, scores in dataset_to_scores.items():
         if not scores:
             continue
         average_score = sum(scores) / len(scores)
-        pack.metrics.data.append(
-            {
-                "key": "score",
-                "value": str(round(average_score, 2)),
-                "scope": {"perimeter": "dataset", "value": dataset_label},
-            }
-        )
+        pack.metrics.data.append({"key": "score", "value": str(round(average_score, 2)), "scope": {"perimeter": "dataset", "value": dataset_label}})
 
 pack.metrics.save()
 pack.recommendations.save()

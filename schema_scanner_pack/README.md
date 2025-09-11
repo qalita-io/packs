@@ -10,11 +10,6 @@ Generates a minimal profile and extracts schema (column list) per dataset, emitt
 ### Configuration
 - `source.config.table_or_query` (string | list | `*`) for databases.
 
-### Usage
-1) Configure `source_conf.json`.
-2) For databases, set `table_or_query` to string, list, or `*`.
-3) Run the pack.
-
 ### Outputs
 - Files per dataset: `{dataset_name}_report.html`, `{dataset_name}_report.json` (minimal profile).
 - `schemas.json`: entries for each column and dataset; dataset entries include `parent_scope` when source is a database.

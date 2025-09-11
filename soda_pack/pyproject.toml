@@ -7,9 +7,8 @@ license = "Apache-2.0"
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = ">=3.11,<3.12"
-soda-core-pandas = "^3.5.5"
-qalita-core = ">=1.2.1"
+python = ">=3.11,<4.0"
+qalita-core = ">=1.2.3"
 pyarrow = "^19.0.0"
 
 [build-system]
