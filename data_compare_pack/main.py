@@ -5,6 +5,12 @@ warnings.filterwarnings(
     category=UserWarning,
     message=r"pkg_resources is deprecated as an API",
 )
+# Silence Spark/Ray unsupported Python >=3.12 warning emitted by optional dependencies
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    message=r"Python 3\.12 and above currently is not supported by Spark and Ray\. Please note that some functionality will not work and currently is not supported\."
+)
 import re
 import os
 import pandas as pd
@@ -91,8 +97,9 @@ for (s_label, s_df), (t_label, t_df) in pairings:
     if len(id_columns) == 0:
         id_columns = use_cols
 
-    df_source_subset = s_df[combined_columns_list]
-    df_target_subset = t_df[combined_columns_list]
+    # Take explicit copies to avoid pandas SettingWithCopyWarning from downstream mutations
+    df_source_subset = s_df.loc[:, combined_columns_list].copy()
+    df_target_subset = t_df.loc[:, combined_columns_list].copy()
 
 ############################ Comparison using datacompy
     compare = datacompy.Compare(
