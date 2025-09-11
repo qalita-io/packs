@@ -8,10 +8,6 @@ Detects duplicate rows per dataset and computes duplication metrics and a datase
 - For each dataset, selects `job.compute_uniqueness_columns` or uses all columns; counts duplicate rows and computes `duplication_score` and `score = 1 - duplication_score`.
 - Emits recommendations if the score is below a threshold (implicit in the pack logic).
 
-### Supported sources
-- Files: csv, xlsx
-- Databases: any SQLAlchemy-compatible
-
 ### Configuration
 - `job.source.skiprows` (int, default 0)
 - `job.compute_uniqueness_columns` (list, optional)

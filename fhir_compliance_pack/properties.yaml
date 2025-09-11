@@ -4,6 +4,8 @@ compatible_sources:
 - sqlite
 - oracle
 - file
+- csv
+- excel
 - folder
 description: Validate dataset compliance against HL7 FHIR resources (presence,formats,enumerations,basic
   referential checks)
@@ -17,5 +19,5 @@ tags:
 - Compliance
 type: validity
 url: https://github.com/qalita-io/packs/tree/main/fhir_compliance_pack
-version: 0.1.10
+version: 0.1.12
 visibility: public

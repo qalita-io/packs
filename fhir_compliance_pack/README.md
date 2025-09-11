@@ -1,13 +1,13 @@
 ## FHIR Compliance Pack
 
-Valide la conformité d'un dataset vis-à-vis d'un sous-ensemble HL7 FHIR (par défaut `Patient`).
+Validates a dataset's compliance against a subset of HL7 FHIR (default `Patient`).
 
-### Principes
-- Mapping configurable des colonnes vers les champs FHIR (`pack_conf.json`)
-- Vérifications: champs requis, énumérations, patterns, date ISO, booléens
-- Métriques: `score` (validity ratio), `completeness`, `validity_ratio`
+### Principles
+- Configurable mapping of columns to FHIR fields (`pack_conf.json`)
+- Checks: required fields, enums, patterns, ISO date, booleans
+- Metrics: `score` (validity ratio), `completeness`, `validity_ratio`
 
-### Configuration minimale (`pack_conf.json`)
+### Minimal configuration (`pack_conf.json`)
 ```
 {
   "job": {

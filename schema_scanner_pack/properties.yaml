@@ -4,6 +4,8 @@ compatible_sources:
 - sqlite
 - oracle
 - file
+- csv
+- excel
 - folder
 description: Scan schema of a dataset and compute metrics such as the number of columns,
   the number of rows, the number of unique values, the number of null values, the
@@ -16,5 +18,5 @@ tags:
 - BI
 type: schema
 url: https://github.com/qalita-io/packs/tree/main/schema_scanner_pack
-version: 2.0.16
+version: 2.0.18
 visibility: public

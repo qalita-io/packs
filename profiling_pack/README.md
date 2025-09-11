@@ -11,10 +11,6 @@ Profiles your dataset(s) using `ydata-profiling` and produces comprehensive metr
   - Extracts warnings from the profiling HTML as recommendations with levels.
   - Builds schema entries for each column and dataset.
 
-### Supported sources
-- Files: csv, xlsx
-- Databases: any SQLAlchemy-compatible (e.g., PostgreSQL, MySQL, MSSQL, Oracle, etc.).
-
 ### Configuration
 - `job.source.skiprows` (int, default 0): number of rows to skip when reading files.
 - `source.config.table_or_query` (string | list | `*`): database table name, SQL query, list of tables, or `*` to scan all tables.
@@ -93,11 +89,6 @@ Profiles your dataset(s) using `ydata-profiling` and produces comprehensive metr
 | `n_scripts`                  | Number of scripts                                                                                  | column:Text    | `integer`                           |
 | `script_counts`              | Script counts    EX: `{'Latin': 918}`                                                              | column:Text    | `dict` of script:count              |
 | `script_char_counts`         | Script character counts    EX: `{'Latin': {'a': 918}}`                                             | column:Text    | `dict` of script:dict of char_count |
-
-### Usage
-1) Configure `source_conf.json` and `pack_conf.json`.
-2) For databases, set `table_or_query` (string, list, or `*`).
-3) Run the pack; it processes each dataset and aggregates outputs.
 
 ### Outputs
 - Files per dataset:

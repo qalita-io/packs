@@ -4,6 +4,8 @@ compatible_sources:
 - sqlite
 - oracle
 - file
+- csv
+- excel
 - folder
 description: Monitors statistical drift between a reference dataset and a current
   dataset for numeric columns
@@ -17,5 +19,5 @@ tags:
 - Production
 type: reasonability
 url: https://github.com/qalita-io/packs/tree/main/data_drift_pack
-version: 0.1.10
+version: 0.1.12
 visibility: public

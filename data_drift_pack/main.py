@@ -39,7 +39,11 @@ else:
     ref_df = _load_parquet_if_path(ref_df)
     cur_df = _load_parquet_if_path(cur_df)
 
-numeric_columns = [c for c in ref_df.columns if np.issubdtype(ref_df[c].dropna().dtype, np.number) and c in cur_df.columns]
+numeric_columns = [
+    c
+    for c in ref_df.columns
+    if pd.api.types.is_numeric_dtype(ref_df[c]) and c in cur_df.columns
+]
 
 p_values = []
 for col in numeric_columns:

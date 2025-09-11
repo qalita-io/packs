@@ -4,6 +4,8 @@ compatible_sources:
 - sqlite
 - oracle
 - file
+- csv
+- excel
 - folder
 description: Run Great Expectations test suites on datasets and export pass/fail metrics
   and recommendations
@@ -16,5 +18,5 @@ tags:
 - Governance
 type: validity
 url: https://github.com/qalita-io/packs/tree/main/great_expectations_pack
-version: 0.1.10
+version: 0.1.12
 visibility: public

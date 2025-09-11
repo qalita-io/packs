@@ -14,11 +14,6 @@ Identifies univariate and multivariate outliers and computes normality scores pe
 | `jobs.id_columns`           | `list` | no       | `[]`    | The list of columns to be used as an identifier.                                                                                 |
 | `jobs.outlier_threshold`    | `int`  | no       | `0.5`   | The threshold for detecting outliers based on the inlier score `inlier_score = 1 - scores / (scores.max() + epsilon)`.           |
 
-### Supported sources
-
-- Files: csv, xlsx
-- Databases: any SQLAlchemy-compatible
-
 ## Analysis 🕵️‍♂️
 
 The pack assesses the data and computes the following metrics:
@@ -34,13 +29,6 @@ The pack assesses the data and computes the following metrics:
 | `score`                   | The aggregated average normality score for each column.     | Dataset | `float` |
 | `normality_score`         | The normality score for each column and the entire dataset. | Column  | `float` |
 | `outliers`                | The number of outliers detected in each column.             | Column  | `int`   |
-
-## Output 📤
-
-### Usage
-1) Configure `source_conf.json` and `pack_conf.json`.
-2) For databases, set `table_or_query` to string, list, or `*`.
-3) Run the pack.
 
 ### Outputs
 - `metrics.json`: per-column `normality_score`, `outliers`; per-dataset `normality_score_dataset`, `score`, and `outliers_table`.
