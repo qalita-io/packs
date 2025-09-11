@@ -1341,13 +1341,13 @@ files = [
 
 [[package]]
 name = "qalita-core"
-version = "1.2.3"
+version = "1.2.4"
 description = "QALITA Platform Core lib for common function used in pack"
 optional = false
 python-versions = "<4.0,>=3.10"
 files = [
-    {file = "qalita_core-1.2.3-py3-none-any.whl", hash = "sha256:62a231cf3d888c938a5878828c46e991d92968dc4683dbc9417d1b297dd7d8b3"},
-    {file = "qalita_core-1.2.3.tar.gz", hash = "sha256:51bb1bd8a55697af0ef646adf260d4bc35442b8d964e7c4cd8bc3a86e9b34be3"},
+    {file = "qalita_core-1.2.4-py3-none-any.whl", hash = "sha256:22a53f3df8029f13bdd8c1b285cb294150c0de83e4a6d3011af9002d8759e60b"},
+    {file = "qalita_core-1.2.4.tar.gz", hash = "sha256:30adeaedaec4386d17454a49be3c74caaf3a28d99f622e46fe7973c2618151bb"},
 ]
 
 [package.dependencies]
@@ -1618,4 +1618,4 @@ zstd = ["zstandard (>=0.18.0)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.12"
-content-hash = "281958cb8fef22762f1c491039369d2a51d92393f21a7ca49d93cedfda1f2c35"
+content-hash = "6b0eb4a56faef15a53c0bcd516dcecb6e4f266d1439460ea9fd89acb032fae00"

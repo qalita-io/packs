@@ -47,7 +47,7 @@ treat_chunks_as_one, auto_named, common_base_detected = detect_chunked_from_item
     raw_items_list, names_for_detect, pack.source_config["name"]
 )
 
-// Process: either per dataset or aggregate across chunks into one scope
+# Process: either per dataset or aggregate across chunks into one scope
 if treat_chunks_as_one:
     if (
         "job" in pack.pack_config
@@ -155,10 +155,15 @@ if isinstance(pack.df_source, list):
     export_duplicates = export_df[list(export_uniqueness)].duplicated()
     duplicated_rows = export_df[export_duplicates]
 else:
-    duplicated_rows = pack.df_source[duplicates]
+    export_df = pack.df_source
+    export_uniqueness = (
+        pack.pack_config.get("job", {}).get("compute_uniqueness_columns") or export_df.columns
+    )
+    export_duplicates = export_df[list(export_uniqueness)].duplicated()
+    duplicated_rows = export_df[export_duplicates]
 
 # Check if there are any duplicates
-if duplicates.empty:
+if duplicated_rows.empty:
     print("No duplicates found. No report will be generated.")
 else:
     # Step 3: Set index or create 'index' column for the Excel export
