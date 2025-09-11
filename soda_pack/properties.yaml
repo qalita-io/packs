@@ -17,5 +17,5 @@ tags:
 - Generic
 type: validity
 url: https://github.com/qalita-io/packs/tree/main/soda_pack
-version: 1.0.9
+version: 1.0.11
 visibility: public
