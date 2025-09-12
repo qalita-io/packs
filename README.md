@@ -1,4 +1,4 @@
-# Qalita Public Packs
+# QALITA Public Packs
 
 <p align="center">
   <img width="250px" height="auto" src="https://cloud.platform.qalita.io/logo.svg" style="max-width:250px;"/>

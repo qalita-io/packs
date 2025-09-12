@@ -1,6 +1,6 @@
 ## Great Expectations Pack
 
-Runs a Great Expectations expectations suite on the dataset loaded via Qalita.
+Runs a Great Expectations expectations suite on the dataset loaded via QALITA.
 
 ### Config
 - `job.suite_name`: logical name of the suite
