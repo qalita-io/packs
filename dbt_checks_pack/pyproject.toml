@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "dbt-checks-pack"
 version = "0.1.0"
-description = "Run dbt tests and emit Qalita metrics"
+description = "Run dbt tests and emit QALITA metrics"
 authors = ["QALITA SAS <contact@qalita.io>"]
 license = "Proprietary"
 readme = "README.md"

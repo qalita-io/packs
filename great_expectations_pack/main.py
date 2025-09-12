@@ -3,7 +3,7 @@ import pandas as pd
 from great_expectations.dataset import PandasDataset
 
 
-class QalitaDataset(PandasDataset):
+class QALITADataset(PandasDataset):
     pass
 
 
@@ -39,7 +39,7 @@ total = 0
 passed = 0
 
 for dataset_label, df_curr in dataset_items:
-    gx_ds = QalitaDataset(df_curr)
+    gx_ds = QALITADataset(df_curr)
     for exp in expectations:
         exp_type = exp.get("expectation_type")
         kwargs = exp.get("kwargs", {})
