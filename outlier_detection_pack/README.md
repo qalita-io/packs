@@ -18,8 +18,8 @@ Identifies univariate and multivariate outliers and computes normality scores pe
 
 The pack assesses the data and computes the following metrics:
 
-* **Univariate Outlier Detection**: Examines each numeric column independently to detect outliers. It calculates a normality score indicating the proportion of inliers (data points that are not outliers) in each column.
-* **Multivariate Outlier Detection**: Considers the entire dataset to detect outliers, providing a holistic view of data normality. It calculates a normality score for the entire dataset, giving a sense of overall data consistency.
+* **Univariate Outlier Detection**: Examines each numeric column independently to detect outliers. It computes a normality score indicating the proportion of inliers (data points that are not outliers) in each column.
+* **Multivariate Outlier Detection**: Considers the entire dataset to detect outliers, providing a holistic view of data normality. It computes a normality score for the entire dataset, giving a sense of overall data consistency.
 * **Normality Scoring**: Offers a score between 0 and 100% for each column and for the entire dataset. A score of 100% indicates no detected outliers, signifying highly normal data.
 * **Actionable Recommendations**: Generates recommendations when a significant number of outliers are detected in a column or across the entire dataset. These recommendations are stratified into 'high', 'warning', and 'info' levels based on the severity of the detected outliers.
 
