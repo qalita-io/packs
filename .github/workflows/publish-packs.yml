@@ -1,4 +1,4 @@
-name: Publish Qalita Packs
+name: Publish QALITA Packs
 on:
   push:
     branches:
@@ -22,14 +22,14 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
 
-      - name: Install Qalita CLI
+      - name: Install QALITA CLI
         run: |
           python -m venv .venv
           source .venv/bin/activate
           python -m pip install --upgrade pip
           pip install qalita
 
-      - name: Configure Qalita environment
+      - name: Configure QALITA environment
         env:
           QALITA_ENV_FILE: ${{ secrets.QALITA_ENV_FILE }}
         run: |
