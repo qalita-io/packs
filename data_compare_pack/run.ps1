@@ -1,4 +1,4 @@
-# PowerShell runner for Qalita pack (Windows, no WSL required)
+# PowerShell runner for QALITA pack (Windows, no WSL required)
 Param()
 $ErrorActionPreference = 'Stop'
 

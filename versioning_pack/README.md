@@ -16,4 +16,4 @@ Compares local dataset schema to the remote schema and decides whether to bump t
 - `metrics.json`: includes `current_version` (from remote) and `computed_version` (same or bumped minor).
 
 ### Contribute
-This pack is part of Qalita Open Source Assets (QOSA). Contributions are welcome: https://github.com/qalita-io/packs.
+This pack is part of QALITA Open Source Assets (QOSA). Contributions are welcome: https://github.com/qalita-io/packs.

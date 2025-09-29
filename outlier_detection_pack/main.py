@@ -342,18 +342,18 @@ for dataset_label, df_curr in items:
 
     # Step 4: Save to Excel per dataset (sauf si agrégation, alors après la boucle)
     if not treat_chunks_as_one:
-        if pack.source_config["type"] == "file":
-            source_file_dir = os.path.dirname(pack.source_config["config"]["path"])
-            current_date = datetime.now().strftime("%Y%m%d")
-            excel_file_name = (
-                f"{current_date}_outlier_detection_report_{dataset_label}.xlsx"
-            )
-            excel_file_path = os.path.join(source_file_dir, excel_file_name)
-            with pd.ExcelWriter(excel_file_path, engine="xlsxwriter") as writer:
-                all_univariate_outliers.to_excel(writer, sheet_name="Univariate Outliers", index=False)
-                multivariate_outliers.to_excel(writer, sheet_name="Multivariate Outliers", index=False)
-                all_outliers.to_excel(writer, sheet_name="All Outliers", index=False)
-            print(f"Outliers report saved to {excel_file_path}")
+        dest_dir = os.getcwd()
+        os.makedirs(dest_dir, exist_ok=True)
+        current_date = datetime.now().strftime("%Y%m%d")
+        excel_file_name = (
+            f"{current_date}_outlier_detection_report_{dataset_label}.xlsx"
+        )
+        excel_file_path = os.path.join(dest_dir, excel_file_name)
+        with pd.ExcelWriter(excel_file_path, engine="xlsxwriter") as writer:
+            all_univariate_outliers.to_excel(writer, sheet_name="Univariate Outliers", index=False)
+            multivariate_outliers.to_excel(writer, sheet_name="Multivariate Outliers", index=False)
+            all_outliers.to_excel(writer, sheet_name="All Outliers", index=False)
+        print(f"Outliers report saved to {excel_file_path}")
 
 # Post-traitement: si agrégation, construire métriques/recommandations/export sur un périmètre unique
 if treat_chunks_as_one:
@@ -372,23 +372,23 @@ if treat_chunks_as_one:
     )
 
     # Excel unique
-    if pack.source_config["type"] == "file":
-        source_file_dir = os.path.dirname(pack.source_config["config"]["path"])
-        current_date = datetime.now().strftime("%Y%m%d")
-        excel_file_name = f"{current_date}_outlier_detection_report_{root_name}.xlsx"
-        excel_file_path = os.path.join(source_file_dir, excel_file_name)
-        exports_full = getattr(agg, "_exports_full", [])  # type: ignore[attr-defined]
-        exports_simple = getattr(agg, "_exports_simple", [])  # type: ignore[attr-defined]
-        exports_mv = getattr(agg, "_exports_mv", [])  # type: ignore[attr-defined]
-        all_univariate_outliers = pd.concat(exports_full, ignore_index=True) if exports_full else pd.DataFrame()
-        all_univariate_outliers_simple = pd.concat(exports_simple, ignore_index=True) if exports_simple else pd.DataFrame()
-        all_multivariate = pd.concat(exports_mv, ignore_index=True) if exports_mv else pd.DataFrame()
-        all_outliers = pd.concat([all_univariate_outliers_simple, all_multivariate], ignore_index=True)
-        with pd.ExcelWriter(excel_file_path, engine="xlsxwriter") as writer:
-            all_univariate_outliers.to_excel(writer, sheet_name="Univariate Outliers", index=False)
-            all_multivariate.to_excel(writer, sheet_name="Multivariate Outliers", index=False)
-            all_outliers.to_excel(writer, sheet_name="All Outliers", index=False)
-        print(f"Outliers report saved to {excel_file_path}")
+    dest_dir = os.getcwd()
+    os.makedirs(dest_dir, exist_ok=True)
+    current_date = datetime.now().strftime("%Y%m%d")
+    excel_file_name = f"{current_date}_outlier_detection_report_{root_name}.xlsx"
+    excel_file_path = os.path.join(dest_dir, excel_file_name)
+    exports_full = getattr(agg, "_exports_full", [])  # type: ignore[attr-defined]
+    exports_simple = getattr(agg, "_exports_simple", [])  # type: ignore[attr-defined]
+    exports_mv = getattr(agg, "_exports_mv", [])  # type: ignore[attr-defined]
+    all_univariate_outliers = pd.concat(exports_full, ignore_index=True) if exports_full else pd.DataFrame()
+    all_univariate_outliers_simple = pd.concat(exports_simple, ignore_index=True) if exports_simple else pd.DataFrame()
+    all_multivariate = pd.concat(exports_mv, ignore_index=True) if exports_mv else pd.DataFrame()
+    all_outliers = pd.concat([all_univariate_outliers_simple, all_multivariate], ignore_index=True)
+    with pd.ExcelWriter(excel_file_path, engine="xlsxwriter") as writer:
+        all_univariate_outliers.to_excel(writer, sheet_name="Univariate Outliers", index=False)
+        all_multivariate.to_excel(writer, sheet_name="Multivariate Outliers", index=False)
+        all_outliers.to_excel(writer, sheet_name="All Outliers", index=False)
+    print(f"Outliers report saved to {excel_file_path}")
 
 # Save artifacts once after processing all datasets
 pack.recommendations.save()
