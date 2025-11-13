@@ -18,7 +18,7 @@ Write-Host "Resolving Python version from pyproject.toml..."
 if (-not (Test-Path "pyproject.toml")) { Write-Error "pyproject.toml not found."; exit 1 }
 $REQUIRED_SPEC = ($null)
 try {
-  $REQUIRED_SPEC = (Select-String -Path "pyproject.toml" -Pattern '^\s*python\s*=\s*\"?(.+?)\"?\s*$' | Select-Object -First 1).Matches.Groups[1].Value.Trim()
+  $REQUIRED_SPEC = (Select-String -Path "pyproject.toml" -Pattern '^\s*requires-python\s*=\s*\"?(.+?)\"?\s*$' | Select-Object -First 1).Matches.Groups[1].Value.Trim()
 } catch {}
 if (-not $REQUIRED_SPEC) { Write-Error "Could not read python requirement from pyproject.toml."; exit 1 }
 Write-Host ("Python requirement: {0}" -f $REQUIRED_SPEC)
@@ -62,37 +62,26 @@ $PYTHON_CMD = $best.path
 $PYTHON_VERSION = $best.ver
 Write-Host ("Selected Python: {0} (version {1})" -f $PYTHON_CMD, $PYTHON_VERSION)
 
-# Install poetry if not available (download installer to temp to avoid STDIN issues)
-$poetryCmd = (Get-Command poetry -ErrorAction SilentlyContinue)
-$POETRY_BIN = $null
-if (-not $poetryCmd) {
-  Write-Host "Poetry could not be found, installing now..."
-  if (-not $env:POETRY_HOME) { $env:POETRY_HOME = Join-Path $env:USERPROFILE ".poetry" }
-  $installer = Join-Path $env:TEMP ("install-poetry-{0}.py" -f ([System.Guid]::NewGuid().ToString('N')))
+# Install uv if not available
+$uvCmd = (Get-Command uv -ErrorAction SilentlyContinue)
+$UV_BIN = $null
+if (-not $uvCmd) {
+  Write-Host "uv could not be found, installing now..."
   try {
-    Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing -OutFile $installer
-    & $PYTHON_CMD $installer
+    & $PYTHON_CMD -m pip install --user uv
+    $UV_BIN = (Get-Command uv -ErrorAction SilentlyContinue).Path
+    if (-not $UV_BIN) {
+      $userScripts = Join-Path $env:USERPROFILE ".local\bin"
+      if (Test-Path (Join-Path $userScripts "uv.exe")) {
+        $UV_BIN = Join-Path $userScripts "uv.exe"
+        $env:PATH = "$userScripts;$env:PATH"
+      }
+    }
   } catch {
-    Write-Host "Poetry installer failed, continuing without Poetry (will fallback to pip)."
-  } finally {
-    if (Test-Path $installer) { Remove-Item $installer -Force -ErrorAction SilentlyContinue }
+    Write-Host "uv installation failed, continuing without uv (will fallback to pip)."
   }
-  # Try common locations
-  $candidates = @()
-  if ($env:POETRY_HOME) { $candidates += (Join-Path $env:POETRY_HOME "bin\poetry.exe") }
-  $roaming = [Environment]::GetFolderPath('ApplicationData')
-  if ($roaming) { $candidates += (Join-Path $roaming "Python\Scripts\poetry.exe") }
-  $found = $null
-  foreach ($c in $candidates) { if (Test-Path $c) { $found = $c; break } }
-  if (-not $found) { $poetryCmd = (Get-Command poetry -ErrorAction SilentlyContinue) }
-  $POETRY_BIN = if ($found) { $found } elseif ($poetryCmd) { $poetryCmd.Path } else { $null }
 } else {
-  $POETRY_BIN = $poetryCmd.Path
-}
-
-# Ensure export plugin (Poetry 2.x) if poetry is available
-if ($POETRY_BIN) {
-  try { & $POETRY_BIN self add poetry-plugin-export *> $null } catch {}
+  $UV_BIN = $uvCmd.Path
 }
 
 Write-Host ("Detected Python version: {0}" -f $PYTHON_VERSION)
@@ -125,26 +114,29 @@ if (-not (Get-Command python -ErrorAction SilentlyContinue)) { Write-Error "Fail
 Write-Host ("Venv python: {0}" -f (Get-Command python).Path)
 Write-Host ("Venv python version: {0}" -f (& python -V 2>&1))
 
-# Install requirements using poetry export + pip (fallback to pip install .)
-Write-Host "Installing requirements using poetry..."
-$env:POETRY_VIRTUALENVS_CREATE = "false"
+# Install requirements using uv (fallback to pip install .)
+Write-Host "Installing requirements using uv..."
 $env:PIP_DISABLE_PIP_VERSION_CHECK = "1"
 python -m pip install --upgrade --quiet pip setuptools wheel
 
-$REQ_FILE = Join-Path (Get-Location) ".qalita_requirements.txt"
-$exportOk = $false
-if ($POETRY_BIN) {
+$installOk = $false
+if ($UV_BIN) {
   try {
-    & $POETRY_BIN export -f requirements.txt --without-hashes -o "$REQ_FILE" *> $null
-    if ($LASTEXITCODE -eq 0 -and (Test-Path "$REQ_FILE") -and ((Get-Item "$REQ_FILE").Length -gt 0)) { $exportOk = $true }
+    & $UV_BIN lock
+    if ($LASTEXITCODE -eq 0) {
+      & $UV_BIN pip sync uv.lock
+      if ($LASTEXITCODE -eq 0) { $installOk = $true }
+    }
+    if (-not $installOk) {
+      & $UV_BIN pip install -e .
+      if ($LASTEXITCODE -eq 0) { $installOk = $true }
+    }
   } catch {}
 }
-if ($exportOk) {
-  python -m pip install -r "$REQ_FILE" --quiet
-  if ($LASTEXITCODE -ne 0) { Write-Error "Failed to install requirements with pip."; exit 1 }
-  Write-Host "Requirements installed from exported lock."
+if ($installOk) {
+  Write-Host "Requirements installed with uv."
 } else {
-  Write-Host "Poetry unavailable or export failed; installing project with pip."
+  Write-Host "uv unavailable or installation failed; installing project with pip."
   python -m pip install .
   if ($LASTEXITCODE -ne 0) { Write-Error "Failed to install project with pip."; exit 1 }
   Write-Host "Project installed into venv."
@@ -160,5 +152,4 @@ Write-Host "Script executed successfully."
 Write-Host "Deactivating virtual environment..."
 if (Get-Command deactivate -ErrorAction SilentlyContinue) { deactivate }
 Write-Host "Virtual environment deactivated."
-
 

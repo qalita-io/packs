@@ -1,19 +1,19 @@
-[tool.poetry]
+[project]
 name = "great-expectations-pack"
 version = "0.1.0"
 description = "Run Great Expectations suites on datasets"
-authors = ["QALITA SAS <contact@qalita.io>"]
-license = "Proprietary"
+authors = [
+    {name = "QALITA SAS", email = "contact@qalita.io"}
+]
+license = {text = "Proprietary"}
 readme = "README.md"
-
-[tool.poetry.dependencies]
-python = ">=3.10,<3.12"
-qalita-core = ">=1.2.4"
-great-expectations = ">=0.16.0"
-pyarrow = "^19.0.0"
+requires-python = ">=3.10,<3.12"
+dependencies = [
+    "qalita-core>=1.2.4",
+    "great-expectations>=0.16.0",
+    "pyarrow>=19.0.0",
+]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
-
+requires = ["hatchling"]
+build-backend = "hatchling.build"

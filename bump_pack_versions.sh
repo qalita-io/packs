@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # This script increments the patch version in every properties.yaml under packs/*
-# and runs `poetry lock` in each corresponding pack directory that has a pyproject.toml.
+# and runs `uv lock` in each corresponding pack directory that has a pyproject.toml.
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -51,12 +51,12 @@ for prop in "${PROP_FILES[@]}"; do
 
   echo "[$pack_name] Bumped version: $current_version -> $new_version"
 
-  # Run poetry lock if pyproject.toml exists
+  # Run uv lock if pyproject.toml exists
   if [[ -f "$pack_dir/pyproject.toml" ]]; then
-    echo "[$pack_name] Running poetry lock..."
-    (cd "$pack_dir" && poetry lock)
+    echo "[$pack_name] Running uv lock..."
+    (cd "$pack_dir" && uv lock)
   else
-    echo "[$pack_name] No pyproject.toml; skipping poetry lock"
+    echo "[$pack_name] No pyproject.toml; skipping uv lock"
   fi
 done
 
