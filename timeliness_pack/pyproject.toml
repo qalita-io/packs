@@ -1,17 +1,19 @@
-[tool.poetry]
+[project]
 name = "timeliness-pack"
 version = "1.0.0"
 description = "Scan schema for files"
-authors = ["qalita"]
-license = "Proprietary"
+authors = [
+    {name = "QALITA SAS", email = "contact@qalita.io"}
+]
+license = {text = "Proprietary"}
 readme = "README.md"
-
-[tool.poetry.dependencies]
-python = ">=3.10,<4.0"
-matplotlib = "^3.8.0"
-qalita-core = ">=1.2.4"
-pyarrow = "^19.0.0"
+requires-python = ">=3.10,<4.0"
+dependencies = [
+    "matplotlib>=3.8.0",
+    "qalita-core>=1.2.4",
+    "pyarrow>=19.0.0",
+]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"

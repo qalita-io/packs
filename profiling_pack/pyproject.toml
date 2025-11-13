@@ -1,23 +1,25 @@
-[tool.poetry]
+[project]
 name = "profiling-pack"
 version = "1.0.0"
 description = "Pack profiling gives general information about the source"
-authors = ["QALITA SAS <contact@qalita.io>"]
-license = "Apache-2.0"
+authors = [
+    {name = "QALITA SAS", email = "contact@qalita.io"}
+]
+license = {text = "Apache-2.0"}
 readme = "README.md"
-
-[tool.poetry.dependencies]
-python = ">=3.12,<3.13"
-ydata-profiling = "^4.6.0"
-matplotlib = "^3.8.0"
-lxml = "^4.9.3"
-openpyxl = "^3.1.2"
-html5lib = "^1.1"
-beautifulsoup4 = "^4.12.3"
-qalita-core = ">=1.2.4"
-numpy = "<2.0.0"
-pyarrow = "^19.0.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "ydata-profiling>=4.6.0",
+    "matplotlib>=3.8.0",
+    "lxml>=4.9.3",
+    "openpyxl>=3.1.2",
+    "html5lib>=1.1",
+    "beautifulsoup4>=4.12.3",
+    "qalita-core>=1.2.4",
+    "numpy<2.0.0",
+    "pyarrow>=19.0.0",
+]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"

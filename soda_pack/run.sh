@@ -17,7 +17,7 @@ if [ ! -f pyproject.toml ]; then
     exit 1
 fi
 
-REQUIRED_SPEC=$(grep -E '^\s*python\s*=' pyproject.toml | head -n1 | cut -d '=' -f2- | tr -d ' "')
+REQUIRED_SPEC=$(grep -E '^\s*requires-python\s*=' pyproject.toml | head -n1 | cut -d '=' -f2- | tr -d ' "')
 if [ -z "$REQUIRED_SPEC" ]; then
     echo "Could not read python requirement from pyproject.toml."
     exit 1
@@ -86,15 +86,14 @@ PYTHON_CMD="$BEST_CMD"
 PYTHON_VERSION=$($PYTHON_CMD -V | awk '{print $2}' | cut -d'.' -f1,2)
 echo "Selected Python: $PYTHON_CMD (version $PYTHON_VERSION)"
 
-# Install poetry if it's not installed
-if ! command -v poetry > /dev/null
+# Install uv if it's not installed
+if ! command -v uv > /dev/null
 then
-    echo "Poetry could not be found, installing now..."
-    export POETRY_HOME="$HOME/.poetry"
-    curl -sSL https://install.python-poetry.org | $PYTHON_CMD -
-    export PATH="$HOME/.poetry/bin:$PATH"
+    echo "uv could not be found, installing now..."
+    $PYTHON_CMD -m pip install --user uv
+    export PATH="$HOME/.local/bin:$PATH"
     if [ $? -ne 0 ]; then
-        echo "Failed to install Poetry."
+        echo "Failed to install uv."
         exit 1
     fi
 fi
@@ -150,30 +149,27 @@ echo "Virtual environment activated."
 echo "Venv python: $(which python)"
 echo "Venv python version: $(python -V 2>&1)"
 
-# Install the requirements using Poetry export + pip to force install into active venv
-echo "Installing requirements using poetry..."
-export POETRY_VIRTUALENVS_CREATE=false
+# Install the requirements using uv
+echo "Installing requirements using uv..."
 export PIP_DISABLE_PIP_VERSION_CHECK=1
 
 # Upgrade pip toolchain
 python -m pip install --upgrade --quiet pip setuptools wheel
 
-# Export requirements from Poetry and install with pip
-REQ_FILE="$(pwd)/.qalita_requirements.txt"
-poetry config warnings.export false
-poetry lock --no-update
-poetry export -f requirements.txt --without-hashes -o "$REQ_FILE"
+# Generate lock file and install dependencies with uv
+uv lock
 if [ $? -ne 0 ]; then
-    echo "Failed to export requirements from Poetry."
+    echo "Failed to generate uv lock file."
     exit 1
 fi
 
 # Proactively remove Dask-related packages from previous runs to avoid import side effects
 python -m pip uninstall -y dask dask-sql distributed soda-core-pandas-dask 2>/dev/null || true
 
-python -m pip install -r "$REQ_FILE" --quiet
+# Install dependencies using uv pip sync or uv pip install
+uv pip sync uv.lock || uv pip install -e .
 if [ $? -ne 0 ]; then
-    echo "Failed to install requirements with pip."
+    echo "Failed to install requirements with uv."
     exit 1
 fi
 echo "Requirements installed."

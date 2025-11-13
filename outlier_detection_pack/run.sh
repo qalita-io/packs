@@ -1,7 +1,4 @@
 #!/bin/sh
-# Detect platform
-OS_NAME="$(uname 2>/dev/null || echo Windows)"
-
 echo "Running as user: $(whoami)"
 
 # Extract pack name from properties.yaml using Python
@@ -20,7 +17,7 @@ if [ ! -f pyproject.toml ]; then
     exit 1
 fi
 
-REQUIRED_SPEC=$(grep -E '^\s*python\s*=' pyproject.toml | head -n1 | cut -d '=' -f2- | tr -d ' "')
+REQUIRED_SPEC=$(grep -E '^\s*requires-python\s*=' pyproject.toml | head -n1 | cut -d '=' -f2- | tr -d ' "')
 if [ -z "$REQUIRED_SPEC" ]; then
     echo "Could not read python requirement from pyproject.toml."
     exit 1
@@ -60,7 +57,7 @@ BEST_CMD=""
 BEST_VER=""
 for CMD in $CANDIDATE_CMDS; do
     CMD_PATH=$(command -v "$CMD" 2>/dev/null) || continue
-    # Filter out Windows .exe if running under Unix sh
+    # Filter out Windows shims if any
     echo "$CMD_PATH" | grep -qE '\\.exe$' && continue
     VER=$("$CMD_PATH" -V 2>&1 | awk '{print $2}' | cut -d'.' -f1,2)
     case "$VER" in
@@ -89,46 +86,34 @@ PYTHON_CMD="$BEST_CMD"
 PYTHON_VERSION=$($PYTHON_CMD -V | awk '{print $2}' | cut -d'.' -f1,2)
 echo "Selected Python: $PYTHON_CMD (version $PYTHON_VERSION)"
 
-# Install poetry if it's not installed and resolve its binary path
-POETRY_BIN="$(command -v poetry 2>/dev/null || true)"
-if [ -z "$POETRY_BIN" ]; then
-    echo "Poetry could not be found, installing now..."
-    export POETRY_HOME="${POETRY_HOME:-$HOME/.poetry}"
-    curl -sSL https://install.python-poetry.org | "$PYTHON_CMD" -
+# Install uv if it's not installed
+if ! command -v uv > /dev/null
+then
+    echo "uv could not be found, installing now..."
+    $PYTHON_CMD -m pip install --user uv
+    export PATH="$HOME/.local/bin:$PATH"
     if [ $? -ne 0 ]; then
-        echo "Failed to install Poetry."
+        echo "Failed to install uv."
         exit 1
     fi
-    POETRY_BIN="$POETRY_HOME/bin/poetry"
-else
-    POETRY_BIN="$(command -v poetry)"
 fi
-
-# Ensure the export plugin is available (Poetry 2.x)
-"$POETRY_BIN" self add poetry-plugin-export >/dev/null 2>&1 || true
 
 echo "Detected Python version: $PYTHON_VERSION"
 
-# Attempt to install python3-venv if not present (Linux only)
+# Attempt to install python3-venv if not present
 if ! $PYTHON_CMD -m venv --help > /dev/null 2>&1; then
-    if echo "$OS_NAME" | grep -qi linux; then
-        echo "python3-venv is not installed. Attempting to install now..."
-        if command -v apt >/dev/null 2>&1; then
-            sudo apt update && sudo apt install "python${PYTHON_VERSION}-venv" -y
-        elif command -v dnf >/dev/null 2>&1; then
-            sudo dnf install "python${PYTHON_VERSION/./}-venv" -y || true
-        fi
+    echo "python3-venv is not installed. Attempting to install now..."
+    sudo apt update
+    sudo apt install "python${PYTHON_VERSION}-venv" -y
+    if [ $? -ne 0 ]; then
+        echo "Failed to install python3-venv for Python $PYTHON_VERSION."
+        exit 1
     fi
-    # If still missing, try ensurepip
-    "$PYTHON_CMD" -m ensurepip --upgrade >/dev/null 2>&1 || true
 fi
 
-# Venv path (Windows uses Scripts, Unix uses bin)
+# Check if virtual environment specific to the pack exists in the parent directory
+# Use the selected Python minor version in the venv name to avoid mixing versions
 VENV_PATH="$HOME/.qalita/agent_run_temp/${PACK_NAME}_py${PYTHON_VERSION}_venv"
-ACTIVATE_SH="$VENV_PATH/bin/activate"
-ACTIVATE_PS1="$VENV_PATH/Scripts/Activate.ps1"
-ACTIVATE_BAT="$VENV_PATH/Scripts/activate.bat"
-
 echo "Virtual Environment Path: $VENV_PATH"
 
 if [ ! -d "$VENV_PATH" ]; then
@@ -143,57 +128,51 @@ else
     echo "Virtual environment already exists."
 fi
 
-# Activate venv cross-platform
-echo "Activating virtual environment..."
-if [ -f "$ACTIVATE_SH" ]; then
-    . "$ACTIVATE_SH"
-elif [ -f "$ACTIVATE_BAT" ]; then
-    # Attempt activation via cmd if running under Git Bash
-    if command -v cmd.exe >/dev/null 2>&1; then
-        cmd.exe /c "$ACTIVATE_BAT" >/dev/null 2>&1 || true
-    fi
-elif [ -f "$ACTIVATE_PS1" ]; then
-    if command -v powershell >/dev/null 2>&1; then
-        powershell -ExecutionPolicy Bypass -File "$ACTIVATE_PS1" >/dev/null 2>&1 || true
+# Check if activate script is executable
+if [ ! -x "$VENV_PATH/bin/activate" ]; then
+    echo "Setting execute permissions on activate script..."
+    chmod +x "$VENV_PATH/bin/activate"
+    if [ $? -ne 0 ]; then
+        echo "Failed to set execute permissions on activate script."
+        exit 1
     fi
 fi
 
-if ! command -v python >/dev/null 2>&1; then
+# Activate the virtual environment specific to the pack from the parent directory
+echo "Activating virtual environment..."
+. "$VENV_PATH/bin/activate"
+if [ $? -ne 0 ]; then
     echo "Failed to activate virtual environment."
     exit 1
 fi
-
 echo "Virtual environment activated."
 echo "Venv python: $(which python)"
 echo "Venv python version: $(python -V 2>&1)"
 
-# Install the requirements using Poetry export + pip (fallback to pip install .)
-echo "Installing requirements using poetry..."
-export POETRY_VIRTUALENVS_CREATE=false
+# Install the requirements using uv
+echo "Installing requirements using uv..."
 export PIP_DISABLE_PIP_VERSION_CHECK=1
 
 # Upgrade pip toolchain
 python -m pip install --upgrade --quiet pip setuptools wheel
 
-REQ_FILE="$(pwd)/.qalita_requirements.txt"
-"$POETRY_BIN" export -f requirements.txt --without-hashes -o "$REQ_FILE" 2>/dev/null
-EXPORT_STATUS=$?
-if [ $EXPORT_STATUS -eq 0 ] && [ -s "$REQ_FILE" ]; then
-    python -m pip install -r "$REQ_FILE" --quiet
-    if [ $? -ne 0 ]; then
-        echo "Failed to install requirements with pip."
-        exit 1
-    fi
-    echo "Requirements installed from exported lock."
-else
-    echo "Poetry export unavailable; falling back to installing project with pip."
-    python -m pip install .
-    if [ $? -ne 0 ]; then
-        echo "Failed to install project with pip."
-        exit 1
-    fi
-    echo "Project installed into venv."
+# Generate lock file and install dependencies with uv
+uv lock
+if [ $? -ne 0 ]; then
+    echo "Failed to generate uv lock file."
+    exit 1
 fi
+
+# Proactively remove Dask-related packages from previous runs to avoid import side effects
+python -m pip uninstall -y dask dask-sql distributed soda-core-pandas-dask 2>/dev/null || true
+
+# Install dependencies using uv pip sync or uv pip install
+uv pip sync uv.lock || uv pip install -e .
+if [ $? -ne 0 ]; then
+    echo "Failed to install requirements with uv."
+    exit 1
+fi
+echo "Requirements installed."
 
 # Run your script
 echo "Running script..."
@@ -206,7 +185,5 @@ echo "Script executed successfully."
 
 # Deactivate virtual environment
 echo "Deactivating virtual environment..."
-if command -v deactivate >/dev/null 2>&1; then
-    deactivate
-fi
+deactivate
 echo "Virtual environment deactivated."
