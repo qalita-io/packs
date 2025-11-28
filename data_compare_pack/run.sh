@@ -113,7 +113,7 @@ fi
 
 # Check if virtual environment specific to the pack exists in the parent directory
 # Use the selected Python minor version in the venv name to avoid mixing versions
-VENV_PATH="$HOME/.qalita/agent_run_temp/${PACK_NAME}_py${PYTHON_VERSION}_venv"
+VENV_PATH="$HOME/.qalita/jobs/${PACK_NAME}_py${PYTHON_VERSION}_venv"
 echo "Virtual Environment Path: $VENV_PATH"
 
 if [ ! -d "$VENV_PATH" ]; then

@@ -89,7 +89,7 @@ Write-Host ("Detected Python version: {0}" -f $PYTHON_VERSION)
 # Build venv path
 $QALITA_HOME = if ($env:QALITA_HOME) { $env:QALITA_HOME } else { Join-Path $env:USERPROFILE ".qalita" }
 Write-Host ("Virtual Environment Root: {0}" -f $QALITA_HOME)
-$VENV_PATH = Join-Path $QALITA_HOME ("agent_run_temp\{0}_py{1}_venv" -f $PACK_NAME, $PYTHON_VERSION)
+$VENV_PATH = Join-Path $QALITA_HOME ("jobs\{0}_py{1}_venv" -f $PACK_NAME, $PYTHON_VERSION)
 
 if (-not (Test-Path $VENV_PATH)) {
   Write-Host "Creating virtual environment..."
