@@ -4,6 +4,11 @@ on:
     branches:
       - main
 
+# Minimal permissions following least privilege principle
+permissions:
+  contents: read
+  actions: read
+
 jobs:
   publish:
     runs-on: ubuntu-latest
