@@ -1,20 +1,22 @@
-[tool.poetry]
+[project]
 name = "versioning-pack"
 version = "1.0.0"
 description = "Determine the version of a source"
-authors = ["qalita"]
-license = "Proprietary"
+authors = [
+    {name = "QALITA SAS", email = "contact@qalita.io"}
+]
+license = {text = "Proprietary"}
 readme = "README.md"
-
-[tool.poetry.dependencies]
-requests = "^2.31.0"
-python = ">=3.10,<4.0"
-matplotlib = "^3.8.0"
-openpyxl = "^3.1.2"
-sqlalchemy = "^2.0.23"
-qalita-core = ">=1.2.4"
-pyarrow = "^19.0.0"
+requires-python = ">=3.10,<4.0"
+dependencies = [
+    "requests>=2.31.0",
+    "matplotlib>=3.8.0",
+    "openpyxl>=3.1.2",
+    "sqlalchemy>=2.0.23",
+    "qalita-core>=1.2.4",
+    "pyarrow>=19.0.0",
+]
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
