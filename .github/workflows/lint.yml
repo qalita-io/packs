@@ -2,6 +2,11 @@ name: Lint Pipeline
 
 on: [push, pull_request]
 
+# Minimal permissions following least privilege principle
+permissions:
+  contents: read
+  actions: read
+
 jobs:
   pylint_check:
     runs-on: ubuntu-latest
