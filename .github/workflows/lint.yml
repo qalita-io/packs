@@ -42,7 +42,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: TruffleHog OSS
-        uses: trufflesecurity/trufflehog@v3.88.4
+        uses: trufflesecurity/trufflehog@v3.92.4
 
   bandit_check:
     runs-on: ubuntu-latest
