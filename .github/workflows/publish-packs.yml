@@ -46,6 +46,21 @@ jobs:
           printf '%s' "$QALITA_ENV_FILE" > ~/.qalita/.env-armand.leopold
           chmod 600 ~/.qalita/.env-armand.leopold
 
+      - name: Copy shared scripts to all packs
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          for dir in */ ; do
+            [ -d "$dir" ] || continue
+            if [ -f "$dir/pack_conf.json" ]; then
+              pack_name="${dir%/}"
+              echo "Copying scripts to: $pack_name"
+              cp scripts/run.sh "$dir/"
+              cp scripts/run.bat "$dir/"
+              cp scripts/run.ps1 "$dir/"
+            fi
+          done
+
       - name: Login and push all packs
         working-directory: ./
         run: |

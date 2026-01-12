@@ -152,4 +152,3 @@ Write-Host "Script executed successfully."
 Write-Host "Deactivating virtual environment..."
 if (Get-Command deactivate -ErrorAction SilentlyContinue) { deactivate }
 Write-Host "Virtual environment deactivated."
-
