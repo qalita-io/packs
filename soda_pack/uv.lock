@@ -1750,7 +1750,7 @@ wheels = [
 
 [[package]]
 name = "qalita-core"
-version = "1.2.4"
+version = "1.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "azure-storage-blob" },
@@ -1767,9 +1767,9 @@ dependencies = [
     { name = "pymysql" },
     { name = "sqlalchemy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/7d/34/bf1e68cbc405e267eddfe5f88ca6a8c6c5d8fb94df7339caae60092440b2/qalita_core-1.2.4.tar.gz", hash = "sha256:30adeaedaec4386d17454a49be3c74caaf3a28d99f622e46fe7973c2618151bb", size = 20569, upload-time = "2025-09-11T12:54:30.808Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3a/ef/39fcd8d1ebf2c36a2c5154ab1900fc8ff6fca97927adb06d5436397f7a88/qalita_core-1.4.0.tar.gz", hash = "sha256:7d2b629f259efb577b6430e8c0db378434f38efb544a54fed3ccbf2309f8ab34", size = 1357132, upload-time = "2026-01-14T17:49:23.202Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/40/6d/2020598b2f543241e54452d2e39f17c11749d4a1dba1d715660924e5cd54/qalita_core-1.2.4-py3-none-any.whl", hash = "sha256:22a53f3df8029f13bdd8c1b285cb294150c0de83e4a6d3011af9002d8759e60b", size = 21111, upload-time = "2025-09-11T12:54:29.67Z" },
+    { url = "https://files.pythonhosted.org/packages/56/32/6a845c49c0d63bbf52a036509ba379bd88a9e65e41862a2418a4c59056e1/qalita_core-1.4.0-py3-none-any.whl", hash = "sha256:883117623cb439b1492b4750c424fa9838f430b99ac5b5d3ead34a8df5e9001f", size = 21238, upload-time = "2026-01-14T17:49:21.393Z" },
 ]
 
 [[package]]
@@ -1851,6 +1851,8 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/6b/fa/3234f913fe9a6525a7b97c6dad1f51e72b917e6872e051a5e2ffd8b16fbb/ruamel.yaml.clib-0.2.14-cp314-cp314-macosx_15_0_arm64.whl", hash = "sha256:70eda7703b8126f5e52fcf276e6c0f40b0d314674f896fc58c47b0aef2b9ae83", size = 137970, upload-time = "2025-09-22T19:51:09.472Z" },
     { url = "https://files.pythonhosted.org/packages/ef/ec/4edbf17ac2c87fa0845dd366ef8d5852b96eb58fcd65fc1ecf5fe27b4641/ruamel.yaml.clib-0.2.14-cp314-cp314-musllinux_1_2_i686.whl", hash = "sha256:a0cb71ccc6ef9ce36eecb6272c81afdc2f565950cdcec33ae8e6cd8f7fc86f27", size = 739639, upload-time = "2025-09-22T19:51:10.566Z" },
     { url = "https://files.pythonhosted.org/packages/15/18/b0e1fafe59051de9e79cdd431863b03593ecfa8341c110affad7c8121efc/ruamel.yaml.clib-0.2.14-cp314-cp314-musllinux_1_2_x86_64.whl", hash = "sha256:e7cb9ad1d525d40f7d87b6df7c0ff916a66bc52cb61b66ac1b2a16d0c1b07640", size = 764456, upload-time = "2025-09-22T19:51:11.736Z" },
+    { url = "https://files.pythonhosted.org/packages/e7/cd/150fdb96b8fab27fe08d8a59fe67554568727981806e6bc2677a16081ec7/ruamel_yaml_clib-0.2.14-cp314-cp314-win32.whl", hash = "sha256:9b4104bf43ca0cd4e6f738cb86326a3b2f6eef00f417bd1e7efb7bdffe74c539", size = 102394, upload-time = "2025-11-14T21:57:36.703Z" },
+    { url = "https://files.pythonhosted.org/packages/bd/e6/a3fa40084558c7e1dc9546385f22a93949c890a8b2e445b2ba43935f51da/ruamel_yaml_clib-0.2.14-cp314-cp314-win_amd64.whl", hash = "sha256:13997d7d354a9890ea1ec5937a219817464e5cc344805b37671562a401ca3008", size = 122673, upload-time = "2025-11-14T21:57:38.177Z" },
 ]
 
 [[package]]
@@ -1935,7 +1937,7 @@ dependencies = [
 requires-dist = [
     { name = "pandas", specifier = ">=2.0.0" },
     { name = "pyarrow", specifier = ">=19.0.0" },
-    { name = "qalita-core", specifier = ">=1.2.4" },
+    { name = "qalita-core", specifier = ">=1.4.0" },
     { name = "soda-core", specifier = ">=3.5.5" },
     { name = "soda-core-pandas-dask", specifier = ">=3.5.5" },
 ]

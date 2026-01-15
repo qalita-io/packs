@@ -1322,7 +1322,7 @@ requires-dist = [
     { name = "numpy", specifier = ">=2.0.0" },
     { name = "pandas", specifier = ">=2.1.1" },
     { name = "pyod", specifier = ">=1.1.2" },
-    { name = "qalita-core", specifier = ">=1.2.4" },
+    { name = "qalita-core", specifier = ">=1.4.0" },
     { name = "seaborn", specifier = ">=0.13.2" },
     { name = "statsmodels", specifier = ">=0.14.2" },
     { name = "xlsxwriter", specifier = ">=3.2.0" },
@@ -1854,7 +1854,7 @@ wheels = [
 
 [[package]]
 name = "qalita-core"
-version = "1.2.4"
+version = "1.4.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "azure-storage-blob" },
@@ -1871,9 +1871,9 @@ dependencies = [
     { name = "pymysql" },
     { name = "sqlalchemy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/7d/34/bf1e68cbc405e267eddfe5f88ca6a8c6c5d8fb94df7339caae60092440b2/qalita_core-1.2.4.tar.gz", hash = "sha256:30adeaedaec4386d17454a49be3c74caaf3a28d99f622e46fe7973c2618151bb", size = 20569, upload-time = "2025-09-11T12:54:30.808Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/3a/ef/39fcd8d1ebf2c36a2c5154ab1900fc8ff6fca97927adb06d5436397f7a88/qalita_core-1.4.0.tar.gz", hash = "sha256:7d2b629f259efb577b6430e8c0db378434f38efb544a54fed3ccbf2309f8ab34", size = 1357132, upload-time = "2026-01-14T17:49:23.202Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/40/6d/2020598b2f543241e54452d2e39f17c11749d4a1dba1d715660924e5cd54/qalita_core-1.2.4-py3-none-any.whl", hash = "sha256:22a53f3df8029f13bdd8c1b285cb294150c0de83e4a6d3011af9002d8759e60b", size = 21111, upload-time = "2025-09-11T12:54:29.67Z" },
+    { url = "https://files.pythonhosted.org/packages/56/32/6a845c49c0d63bbf52a036509ba379bd88a9e65e41862a2418a4c59056e1/qalita_core-1.4.0-py3-none-any.whl", hash = "sha256:883117623cb439b1492b4750c424fa9838f430b99ac5b5d3ead34a8df5e9001f", size = 21238, upload-time = "2026-01-14T17:49:21.393Z" },
 ]
 
 [[package]]

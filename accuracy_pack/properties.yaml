@@ -17,5 +17,5 @@ tags:
 - Data Accuracy
 type: accuracy
 url: https://github.com/qalita-io/packs/tree/main/accuracy_pack
-version: 2.0.35
+version: 2.0.38
 visibility: public

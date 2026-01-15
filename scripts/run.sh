@@ -166,13 +166,16 @@ fi
 # Proactively remove Dask-related packages from previous runs to avoid import side effects
 python -m pip uninstall -y dask dask-sql distributed soda-core-pandas-dask 2>/dev/null || true
 
-# Install dependencies using uv pip sync or uv pip install
-uv pip sync uv.lock || uv pip install -e .
-if [ $? -ne 0 ]; then
-    echo "Failed to install requirements with uv."
-    exit 1
+# Export lock to requirements format and install
+uv export --no-hashes --no-emit-project > requirements.lock.txt 2>/dev/null
+if ! uv pip install -r requirements.lock.txt; then
+    echo "Failed to install from exported lock, trying direct install..."
+    if ! uv pip install -e .; then
+        echo "Failed to install requirements with uv."
+        exit 1
+    fi
 fi
-echo "Requirements installed."
+echo "Requirements installed from exported lock."
 
 # Run your script
 echo "Running script..."
