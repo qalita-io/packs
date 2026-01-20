@@ -1,7 +1,7 @@
 # QALITA Public Packs
 
 <p align="center">
-  <img width="250px" height="auto" src="https://cloud.platform.qalita.io/logo.svg" style="max-width:250px;"/>
+  <img width="250px" height="auto" src="https://app.platform.qalita.io/logo.svg" style="max-width:250px;"/>
 </p>
 
 [![CI Pipeline](https://github.com/qalita-io/packs/actions/workflows/publish-packs.yml/badge.svg)](https://github.com/qalita-io/packs/actions/workflows/publish-packs.yml)
