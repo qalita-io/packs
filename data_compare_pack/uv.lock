@@ -1362,7 +1362,7 @@ wheels = [
 
 [[package]]
 name = "qalita-core"
-version = "1.4.0"
+version = "1.4.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "azure-storage-blob" },
@@ -1379,9 +1379,9 @@ dependencies = [
     { name = "pymysql" },
     { name = "sqlalchemy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/3a/ef/39fcd8d1ebf2c36a2c5154ab1900fc8ff6fca97927adb06d5436397f7a88/qalita_core-1.4.0.tar.gz", hash = "sha256:7d2b629f259efb577b6430e8c0db378434f38efb544a54fed3ccbf2309f8ab34", size = 1357132, upload-time = "2026-01-14T17:49:23.202Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/71/b3/2e8f777aea76f045c5a6a5b7729229873963cde610bcce4d6eacff89baee/qalita_core-1.4.1.tar.gz", hash = "sha256:a305ab05d47ce9808e19c748091dcb65a86a1d51a6785cc1b9be971dd51b4994", size = 1356910, upload-time = "2026-01-23T14:32:22.697Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/56/32/6a845c49c0d63bbf52a036509ba379bd88a9e65e41862a2418a4c59056e1/qalita_core-1.4.0-py3-none-any.whl", hash = "sha256:883117623cb439b1492b4750c424fa9838f430b99ac5b5d3ead34a8df5e9001f", size = 21238, upload-time = "2026-01-14T17:49:21.393Z" },
+    { url = "https://files.pythonhosted.org/packages/4b/b4/e5aa61275e631ae49f8d7995ff735b03b8fe50be8bd5caf56e5f790f0317/qalita_core-1.4.1-py3-none-any.whl", hash = "sha256:429dfdfd6955a42fa9c66357775bb7901d792d4187dd6808f612984079948a4a", size = 21239, upload-time = "2026-01-23T14:32:21.487Z" },
 ]
 
 [[package]]
