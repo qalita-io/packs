@@ -17,5 +17,5 @@ tags:
 - Testing
 type: validity
 url: https://github.com/qalita-io/packs/tree/main/dbt_checks_pack
-version: 0.1.17
+version: 0.1.18
 visibility: public
