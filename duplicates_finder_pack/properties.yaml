@@ -19,5 +19,5 @@ tags:
 - Healthcare
 type: uniqueness
 url: https://github.com/qalita-io/packs/tree/main/duplicates_finder_pack
-version: 2.0.26
+version: 2.0.27
 visibility: public

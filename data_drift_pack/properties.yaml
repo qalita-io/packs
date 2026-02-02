@@ -19,5 +19,5 @@ tags:
 - Production
 type: reasonability
 url: https://github.com/qalita-io/packs/tree/main/data_drift_pack
-version: 0.1.18
+version: 0.1.19
 visibility: public

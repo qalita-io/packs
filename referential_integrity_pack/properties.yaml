@@ -19,5 +19,5 @@ tags:
 - Customer 360
 type: consistency
 url: https://github.com/qalita-io/packs/tree/main/referential_integrity_pack
-version: 0.1.18
+version: 0.1.19
 visibility: public
