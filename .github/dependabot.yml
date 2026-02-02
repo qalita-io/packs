@@ -4,7 +4,7 @@ updates:
   - package-ecosystem: "pip"
     directory: "/profiling_pack"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     commit-message:
       prefix: "deps(profiling)"
     labels:
@@ -15,7 +15,7 @@ updates:
   - package-ecosystem: "pip"
     directory: "/accuracy_pack"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     commit-message:
       prefix: "deps(accuracy)"
     labels:
@@ -26,7 +26,7 @@ updates:
   - package-ecosystem: "pip"
     directory: "/data_compare_pack"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     commit-message:
       prefix: "deps(data-compare)"
     labels:
@@ -37,7 +37,7 @@ updates:
   - package-ecosystem: "pip"
     directory: "/data_drift_pack"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     commit-message:
       prefix: "deps(data-drift)"
     labels:
@@ -48,7 +48,7 @@ updates:
   - package-ecosystem: "pip"
     directory: "/dbt_checks_pack"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     commit-message:
       prefix: "deps(dbt-checks)"
     labels:
@@ -59,7 +59,7 @@ updates:
   - package-ecosystem: "pip"
     directory: "/duplicates_finder_pack"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     commit-message:
       prefix: "deps(duplicates)"
     labels:
@@ -70,7 +70,7 @@ updates:
   - package-ecosystem: "pip"
     directory: "/fhir_compliance_pack"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     commit-message:
       prefix: "deps(fhir)"
     labels:
@@ -81,7 +81,7 @@ updates:
   - package-ecosystem: "pip"
     directory: "/great_expectations_pack"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     commit-message:
       prefix: "deps(great-expectations)"
     labels:
@@ -92,7 +92,7 @@ updates:
   - package-ecosystem: "pip"
     directory: "/outlier_detection_pack"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     commit-message:
       prefix: "deps(outlier)"
     labels:
@@ -103,7 +103,7 @@ updates:
   - package-ecosystem: "pip"
     directory: "/pii_scanner_pack"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     commit-message:
       prefix: "deps(pii)"
     labels:
@@ -114,7 +114,7 @@ updates:
   - package-ecosystem: "pip"
     directory: "/referential_integrity_pack"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     commit-message:
       prefix: "deps(referential)"
     labels:
@@ -125,7 +125,7 @@ updates:
   - package-ecosystem: "pip"
     directory: "/schema_scanner_pack"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     commit-message:
       prefix: "deps(schema)"
     labels:
@@ -136,7 +136,7 @@ updates:
   - package-ecosystem: "pip"
     directory: "/soda_pack"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     commit-message:
       prefix: "deps(soda)"
     labels:
@@ -147,7 +147,7 @@ updates:
   - package-ecosystem: "pip"
     directory: "/timeliness_pack"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     commit-message:
       prefix: "deps(timeliness)"
     labels:
@@ -158,7 +158,7 @@ updates:
   - package-ecosystem: "pip"
     directory: "/versioning_pack"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     commit-message:
       prefix: "deps(versioning)"
     labels:
@@ -169,7 +169,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     commit-message:
       prefix: "deps(actions)"
     labels:
