@@ -13,10 +13,115 @@ warnings.filterwarnings(
 )
 import re
 import os
+import logging
 import pandas as pd
 import datacompy
 from datetime import datetime
 from qalita_core.pack import Pack
+
+logger = logging.getLogger(__name__)
+
+# Big data configuration
+MAX_ROWS_FOR_FULL_COMPARE = 1_000_000  # Sample if more than 1M rows
+SAMPLE_SIZE_FOR_LARGE_DATASETS = 500_000  # Sample size for large datasets
+MAX_MISMATCHES_TO_EXPORT = 10_000  # Limit mismatch export to avoid memory issues
+
+# Try to import Polars for efficient operations
+try:
+    import polars as pl
+    POLARS_AVAILABLE = True
+except ImportError:
+    POLARS_AVAILABLE = False
+    pl = None
+
+
+def _get_row_count_efficient(paths):
+    """Get row count efficiently without loading all data."""
+    if not paths:
+        return 0
+    
+    if isinstance(paths, str):
+        paths = [paths]
+    
+    parquet_paths = [p for p in paths if isinstance(p, str) and p.lower().endswith((".parquet", ".pq"))]
+    if not parquet_paths:
+        return 0
+    
+    if POLARS_AVAILABLE:
+        try:
+            lf = pl.scan_parquet(parquet_paths)
+            return lf.select(pl.len()).collect(streaming=True).item()
+        except Exception:
+            pass
+    
+    try:
+        import pyarrow.parquet as pq
+        total = 0
+        for path in parquet_paths:
+            pf = pq.ParquetFile(path)
+            total += pf.metadata.num_rows
+        return total
+    except Exception:
+        return 0
+
+
+def _load_parquet_with_sampling(paths, max_rows=None):
+    """
+    Load parquet files with optional sampling for big data.
+    
+    Returns:
+        tuple: (DataFrame, is_sampled, original_row_count)
+    """
+    if not paths:
+        return pd.DataFrame(), False, 0
+    
+    if isinstance(paths, str):
+        paths = [paths]
+    
+    parquet_paths = [p for p in paths if isinstance(p, str) and p.lower().endswith((".parquet", ".pq"))]
+    if not parquet_paths:
+        return pd.DataFrame(), False, 0
+    
+    total_rows = _get_row_count_efficient(parquet_paths)
+    effective_max_rows = max_rows or MAX_ROWS_FOR_FULL_COMPARE
+    
+    if total_rows > effective_max_rows:
+        sample_size = min(SAMPLE_SIZE_FOR_LARGE_DATASETS, effective_max_rows)
+        logger.info(f"Large dataset ({total_rows:,} rows). Sampling {sample_size:,} rows.")
+        print(f"Large dataset ({total_rows:,} rows). Sampling {sample_size:,} rows for comparison.")
+        
+        if POLARS_AVAILABLE:
+            try:
+                lf = pl.scan_parquet(parquet_paths)
+                df = lf.head(sample_size).collect().to_pandas()
+                return df, True, total_rows
+            except Exception as e:
+                logger.warning(f"Polars sampling failed: {e}")
+        
+        try:
+            df = pd.read_parquet(parquet_paths[0], engine="pyarrow")
+            if len(df) > sample_size:
+                df = df.head(sample_size)
+            return df, True, total_rows
+        except Exception:
+            pass
+    
+    # Load full dataset
+    try:
+        if POLARS_AVAILABLE:
+            lf = pl.scan_parquet(parquet_paths)
+            df = lf.collect().to_pandas()
+        else:
+            if len(parquet_paths) == 1:
+                df = pd.read_parquet(parquet_paths[0], engine="pyarrow")
+            else:
+                dfs = [pd.read_parquet(p, engine="pyarrow") for p in parquet_paths]
+                df = pd.concat(dfs, ignore_index=True)
+        return df, False, len(df)
+    except Exception as e:
+        logger.error(f"Failed to load parquet: {e}")
+        return pd.DataFrame(), False, 0
+
 
 # --- Chargement des données ---
 # Pour un fichier : pack.load_data("source")
@@ -46,9 +151,18 @@ with Pack() as pack:
     rel_tol = pack.pack_config["job"].get("rel_tol", 0)
 
     def _load_parquet_if_path(obj):
+        """Load parquet with automatic sampling for large datasets."""
         try:
             if isinstance(obj, str) and obj.lower().endswith((".parquet", ".pq")):
-                return pd.read_parquet(obj, engine="pyarrow")
+                df, is_sampled, orig_rows = _load_parquet_with_sampling([obj])
+                if is_sampled:
+                    print(f"  Sampled from {orig_rows:,} rows")
+                return df
+            elif isinstance(obj, list):
+                df, is_sampled, orig_rows = _load_parquet_with_sampling(obj)
+                if is_sampled:
+                    print(f"  Sampled from {orig_rows:,} rows")
+                return df
         except Exception:
             pass
         return obj
@@ -251,11 +365,28 @@ with Pack() as pack:
             for col in columnLabels
         ]
         df_all_mismatch.columns = new_columnLabels
+        
+        # Limit mismatches to avoid memory issues with large datasets
+        mismatch_count = len(df_all_mismatch)
+        if mismatch_count > MAX_MISMATCHES_TO_EXPORT:
+            print(f"Limiting mismatch export from {mismatch_count:,} to {MAX_MISMATCHES_TO_EXPORT:,} rows")
+            df_mismatch_export = df_all_mismatch.head(MAX_MISMATCHES_TO_EXPORT)
+        else:
+            df_mismatch_export = df_all_mismatch
+        
+        # Use vectorized to_dict instead of iterrows for better performance
+        data_formatted = df_mismatch_export.to_dict(orient="records")
         data_formatted = [
-            [{"value": row[col]} for col in df_all_mismatch.columns]
-            for index, row in df_all_mismatch.iterrows()
+            [{"value": row.get(col)} for col in df_mismatch_export.columns]
+            for row in data_formatted
         ]
         format_structure = {"columnLabels": new_columnLabels, "data": data_formatted}
+        
+        # Add truncation note if applicable
+        if mismatch_count > MAX_MISMATCHES_TO_EXPORT:
+            format_structure["truncated"] = True
+            format_structure["total_mismatches"] = mismatch_count
+        
         pack.metrics.data.extend(
             [
                 {"key": "recommendation_levels_mismatches", "value": {"info": "0", "warning": "0.5", "high": "0.8"}, "scope": {"perimeter": "dataset", "value": s_label}},

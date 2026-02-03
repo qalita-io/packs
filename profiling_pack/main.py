@@ -17,6 +17,120 @@ import os
 from ydata_profiling import ProfileReport
 from datetime import datetime
 from io import StringIO
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Big data configuration for profiling
+MAX_ROWS_FOR_FULL_PROFILE = 1_000_000  # Sample if more than 1M rows
+SAMPLE_SIZE_FOR_LARGE_DATASETS = 500_000  # Sample size for large datasets
+USE_MINIMAL_MODE_THRESHOLD = 5_000_000  # Use minimal mode if more than 5M rows
+
+# Try to import Polars for efficient row counting
+try:
+    import polars as pl
+    POLARS_AVAILABLE = True
+except ImportError:
+    POLARS_AVAILABLE = False
+    pl = None
+
+
+def _get_row_count_efficient(paths):
+    """Get row count efficiently without loading all data."""
+    if not paths:
+        return 0
+    
+    # Try Polars first (fastest)
+    if POLARS_AVAILABLE:
+        try:
+            lf = pl.scan_parquet(paths)
+            return lf.select(pl.len()).collect(streaming=True).item()
+        except Exception:
+            pass
+    
+    # Fallback: read parquet metadata
+    try:
+        import pyarrow.parquet as pq
+        total = 0
+        for path in paths:
+            if isinstance(path, str) and path.lower().endswith((".parquet", ".pq")):
+                pf = pq.ParquetFile(path)
+                total += pf.metadata.num_rows
+        return total
+    except Exception:
+        return 0
+
+
+def _load_parquet_with_sampling(paths, max_rows=None, sample_fraction=None):
+    """
+    Load parquet files with optional sampling for big data.
+    
+    For datasets larger than MAX_ROWS_FOR_FULL_PROFILE, automatically
+    samples to SAMPLE_SIZE_FOR_LARGE_DATASETS rows.
+    
+    Returns:
+        tuple: (DataFrame, is_sampled, original_row_count)
+    """
+    if not paths:
+        return pd.DataFrame(), False, 0
+    
+    # Ensure paths is a list
+    if isinstance(paths, str):
+        paths = [paths]
+    
+    # Filter to valid parquet paths
+    parquet_paths = [p for p in paths if isinstance(p, str) and p.lower().endswith((".parquet", ".pq"))]
+    if not parquet_paths:
+        return pd.DataFrame(), False, 0
+    
+    # Get total row count efficiently
+    total_rows = _get_row_count_efficient(parquet_paths)
+    
+    # Determine if sampling is needed
+    is_sampled = False
+    effective_max_rows = max_rows or MAX_ROWS_FOR_FULL_PROFILE
+    
+    if total_rows > effective_max_rows:
+        sample_size = min(SAMPLE_SIZE_FOR_LARGE_DATASETS, effective_max_rows)
+        logger.info(f"Large dataset detected ({total_rows:,} rows). Sampling {sample_size:,} rows for profiling.")
+        print(f"Large dataset detected ({total_rows:,} rows). Sampling {sample_size:,} rows for profiling.")
+        is_sampled = True
+        
+        # Use Polars for efficient sampling if available
+        if POLARS_AVAILABLE:
+            try:
+                lf = pl.scan_parquet(parquet_paths)
+                # Use head() for deterministic sampling (faster than random sample)
+                df = lf.head(sample_size).collect().to_pandas()
+                return df, is_sampled, total_rows
+            except Exception as e:
+                logger.warning(f"Polars sampling failed: {e}, falling back to pandas")
+        
+        # Pandas fallback: load only first chunk
+        try:
+            df = pd.read_parquet(parquet_paths[0], engine="pyarrow")
+            if len(df) > sample_size:
+                df = df.head(sample_size)
+            return df, is_sampled, total_rows
+        except Exception:
+            pass
+    
+    # Load full dataset (small enough)
+    try:
+        if POLARS_AVAILABLE:
+            lf = pl.scan_parquet(parquet_paths)
+            df = lf.collect().to_pandas()
+        else:
+            if len(parquet_paths) == 1:
+                df = pd.read_parquet(parquet_paths[0], engine="pyarrow")
+            else:
+                dfs = [pd.read_parquet(p, engine="pyarrow") for p in parquet_paths]
+                df = pd.concat(dfs, ignore_index=True)
+        return df, False, len(df)
+    except Exception as e:
+        logger.error(f"Failed to load parquet: {e}")
+        return pd.DataFrame(), False, 0
+
 
 # --- Chargement des données ---
 # Pour un fichier : pack.load_data("source")
@@ -39,34 +153,65 @@ with Pack() as pack:
     raw_df_source = pack.df_source
     configured_table_or_query = pack.source_config.get("config", {}).get("table_or_query")
     data_items = []
+    
+    # Track sampling metadata
+    sampling_metadata = {}
 
-    # Si l'opener renvoie des chemins parquet, les charger avec pandas
-    def _load_parquet_if_path(obj):
+    # Si l'opener renvoie des chemins parquet, les charger avec sampling pour big data
+    def _load_parquet_if_path(obj, dataset_name=None):
+        """Load parquet with automatic sampling for large datasets."""
         try:
             if isinstance(obj, str) and obj.lower().endswith((".parquet", ".pq")):
-                return pd.read_parquet(obj, engine="pyarrow")
-        except Exception:
-            pass
+                df, is_sampled, original_rows = _load_parquet_with_sampling([obj])
+                if dataset_name and is_sampled:
+                    sampling_metadata[dataset_name] = {
+                        "sampled": True,
+                        "original_rows": original_rows,
+                        "sample_rows": len(df),
+                    }
+                return df
+            elif isinstance(obj, list):
+                df, is_sampled, original_rows = _load_parquet_with_sampling(obj)
+                if dataset_name and is_sampled:
+                    sampling_metadata[dataset_name] = {
+                        "sampled": True,
+                        "original_rows": original_rows,
+                        "sample_rows": len(df),
+                    }
+                return df
+        except Exception as e:
+            logger.warning(f"Failed to load parquet: {e}")
         return obj
 
     if isinstance(raw_df_source, list):
-        # Mapper chaque entrée potentielle chemin -> DataFrame
-        loaded_items = [_load_parquet_if_path(item) for item in raw_df_source]
+        # Check if this is a list of chunk paths that should be treated as one dataset
+        total_rows = _get_row_count_efficient(raw_df_source)
+        
+        # Load with sampling
+        df, is_sampled, original_rows = _load_parquet_with_sampling(raw_df_source)
+        if is_sampled:
+            sampling_metadata[dataset_scope_name] = {
+                "sampled": True,
+                "original_rows": original_rows,
+                "sample_rows": len(df),
+            }
+        
         # Si la config fournit une liste de noms, l'utiliser si elle correspond en taille
         names = None
         if isinstance(configured_table_or_query, (list, tuple)):
             names = list(configured_table_or_query)
-            if len(names) != len(loaded_items):
+            if len(names) != 1:  # For sampled data, we have single combined df
                 names = None
         auto_named = False
         if names is None:
-            names = [f"{dataset_scope_name}_{i+1}" for i in range(len(loaded_items))]
+            names = [dataset_scope_name]
             auto_named = True
-        data_items = list(zip(names, loaded_items))
+        data_items = [(names[0], df)]
     else:
         auto_named = False
         common_base_detected = False
-        data_items = [(dataset_scope_name, _load_parquet_if_path(raw_df_source))]
+        df = _load_parquet_if_path(raw_df_source, dataset_scope_name)
+        data_items = [(dataset_scope_name, df)]
 
     print(f"Generating profile for {len(data_items)} dataset(s)")
 
@@ -97,12 +242,31 @@ with Pack() as pack:
         except Exception:
             pass
 
+        # Check if this dataset was sampled
+        sample_info = sampling_metadata.get(dataset_name, {})
+        is_sampled = sample_info.get("sampled", False)
+        original_rows = sample_info.get("original_rows", len(df))
+        
+        # Build profile title with sampling info
+        if is_sampled:
+            title = f"Profiling Report for {dataset_name} (Sampled: {len(df):,} of {original_rows:,} rows)"
+            print(f"Note: Dataset was sampled from {original_rows:,} to {len(df):,} rows for profiling.")
+        else:
+            title = f"Profiling Report for {dataset_name}"
+        
+        # Use minimal mode for very large samples to reduce memory usage
+        use_minimal = len(df) > USE_MINIMAL_MODE_THRESHOLD
+        
         # Profiling pour ce dataset
         profile = ProfileReport(
             df,
-            title=f"Profiling Report for {dataset_name}",
+            title=title,
             correlations={"auto": {"calculate": False}},
+            minimal=use_minimal,  # Use minimal mode for very large datasets
         )
+        
+        if use_minimal:
+            print(f"Using minimal profiling mode for large dataset ({len(df):,} rows).")
 
         # Sauvegarde HTML
         html_file_name = f"{dataset_name}_report.html"

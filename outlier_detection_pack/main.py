@@ -1,4 +1,21 @@
 from qalita_core.pack import Pack
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Big data configuration for outlier detection
+MAX_ROWS_FOR_FULL_KNN = 100_000  # KNN training sample size
+MAX_CATEGORIES_FOR_ONEHOT = 100  # Limit categories to avoid memory explosion
+MAX_ROWS_FOR_FULL_LOAD = 1_000_000  # Sample if more than 1M rows
+SAMPLE_SIZE_FOR_LARGE_DATASETS = 500_000
+
+# Try to import Polars for efficient operations
+try:
+    import polars as pl
+    POLARS_AVAILABLE = True
+except ImportError:
+    POLARS_AVAILABLE = False
+    pl = None
 
 
 # Define a function to determine recommendation level based on the proportion of outliers
@@ -9,6 +26,90 @@ def determine_recommendation_level(proportion_outliers):
         return "warning"
     else:
         return "info"
+
+
+def _get_row_count_efficient(paths):
+    """Get row count efficiently without loading all data."""
+    if not paths:
+        return 0
+    
+    if isinstance(paths, str):
+        paths = [paths]
+    
+    parquet_paths = [p for p in paths if isinstance(p, str) and p.lower().endswith((".parquet", ".pq"))]
+    if not parquet_paths:
+        return 0
+    
+    if POLARS_AVAILABLE:
+        try:
+            lf = pl.scan_parquet(parquet_paths)
+            return lf.select(pl.len()).collect(streaming=True).item()
+        except Exception:
+            pass
+    
+    try:
+        import pyarrow.parquet as pq
+        total = 0
+        for path in parquet_paths:
+            pf = pq.ParquetFile(path)
+            total += pf.metadata.num_rows
+        return total
+    except Exception:
+        return 0
+
+
+def _load_parquet_with_sampling(paths, max_rows=None):
+    """Load parquet with sampling for large datasets."""
+    import pandas as pd
+    
+    if not paths:
+        return pd.DataFrame(), False, 0
+    
+    if isinstance(paths, str):
+        paths = [paths]
+    
+    parquet_paths = [p for p in paths if isinstance(p, str) and p.lower().endswith((".parquet", ".pq"))]
+    if not parquet_paths:
+        return pd.DataFrame(), False, 0
+    
+    total_rows = _get_row_count_efficient(parquet_paths)
+    effective_max_rows = max_rows or MAX_ROWS_FOR_FULL_LOAD
+    
+    if total_rows > effective_max_rows:
+        sample_size = min(SAMPLE_SIZE_FOR_LARGE_DATASETS, effective_max_rows)
+        logger.info(f"Large dataset ({total_rows:,} rows). Sampling {sample_size:,} rows.")
+        print(f"Large dataset ({total_rows:,} rows). Sampling {sample_size:,} rows for outlier detection.")
+        
+        if POLARS_AVAILABLE:
+            try:
+                lf = pl.scan_parquet(parquet_paths)
+                df = lf.head(sample_size).collect().to_pandas()
+                return df, True, total_rows
+            except Exception:
+                pass
+        
+        try:
+            df = pd.read_parquet(parquet_paths[0], engine="pyarrow")
+            if len(df) > sample_size:
+                df = df.head(sample_size)
+            return df, True, total_rows
+        except Exception:
+            pass
+    
+    try:
+        if POLARS_AVAILABLE:
+            lf = pl.scan_parquet(parquet_paths)
+            df = lf.collect().to_pandas()
+        else:
+            if len(parquet_paths) == 1:
+                df = pd.read_parquet(parquet_paths[0], engine="pyarrow")
+            else:
+                dfs = [pd.read_parquet(p, engine="pyarrow") for p in parquet_paths]
+                df = pd.concat(dfs, ignore_index=True)
+        return df, False, len(df)
+    except Exception as e:
+        logger.error(f"Failed to load parquet: {e}")
+        return pd.DataFrame(), False, 0
 
 
 import os
@@ -39,9 +140,14 @@ with Pack() as pack:
     configured = pack.source_config.get("config", {}).get("table_or_query")
 
     def _load_parquet_if_path(obj):
+        """Load parquet with automatic sampling for large datasets."""
         try:
             if isinstance(obj, str) and obj.lower().endswith((".parquet", ".pq")):
-                return pd.read_parquet(obj, engine="pyarrow")
+                df, is_sampled, orig_rows = _load_parquet_with_sampling([obj])
+                return df
+            elif isinstance(obj, list):
+                df, is_sampled, orig_rows = _load_parquet_with_sampling(obj)
+                return df
         except Exception:
             pass
         return obj
@@ -92,12 +198,28 @@ with Pack() as pack:
                 f"[{dataset_label}] Dataset too small for KNN: at least {min_required_samples} rows required (current: {len(df_curr)})."
             )
 
-        # Univariate
+        # Univariate outlier detection with sampling for large datasets
         univariate_outliers = {}
+        
+        # Sample data for KNN training if dataset is large
+        n_rows = len(df_curr)
+        use_knn_sample = n_rows > MAX_ROWS_FOR_FULL_KNN
+        if use_knn_sample:
+            knn_sample_idx = np.random.choice(n_rows, size=MAX_ROWS_FOR_FULL_KNN, replace=False)
+            print(f"Using {MAX_ROWS_FOR_FULL_KNN:,} sample for KNN training (dataset has {n_rows:,} rows)")
+        
         for column in [col for col in df_curr.columns if col not in id_columns]:
             if pd.api.types.is_numeric_dtype(df_curr[column]):
                 clf = KNN()
-                clf.fit(df_curr[[column]])
+                
+                # Train on sample for large datasets
+                if use_knn_sample:
+                    train_data = df_curr[[column]].iloc[knn_sample_idx]
+                    clf.fit(train_data)
+                else:
+                    clf.fit(df_curr[[column]])
+                
+                # Score all data
                 scores = clf.decision_function(df_curr[[column]])
                 inlier_score = 1 - scores / (scores.max() + epsilon)
                 col_mean = float(inlier_score.mean().item())
@@ -139,16 +261,30 @@ with Pack() as pack:
 
         total_univariate_outliers = sum(len(outliers) for outliers in univariate_outliers.values())
 
-        # Encode categoricals
+        # Encode categoricals with limited categories to avoid memory explosion
         non_numeric_columns = df_curr.select_dtypes(exclude=[np.number]).columns
-        encoder = OneHotEncoder(drop="if_binary")
-        if len(non_numeric_columns) > 0:
-            encoded_data = encoder.fit_transform(df_curr[non_numeric_columns])
-            encoded_df = pd.DataFrame(encoded_data.toarray(), columns=encoder.get_feature_names_out())
-            df_num = df_curr.drop(non_numeric_columns, axis=1)
+        
+        # Filter to columns with reasonable cardinality
+        valid_cat_columns = []
+        for col in non_numeric_columns:
+            n_unique = df_curr[col].nunique()
+            if n_unique <= MAX_CATEGORIES_FOR_ONEHOT:
+                valid_cat_columns.append(col)
+            else:
+                print(f"Skipping column '{col}' from encoding: {n_unique} unique values > {MAX_CATEGORIES_FOR_ONEHOT} limit")
+        
+        encoder = OneHotEncoder(drop="if_binary", sparse_output=True)  # Use sparse for memory efficiency
+        if len(valid_cat_columns) > 0:
+            encoded_data = encoder.fit_transform(df_curr[valid_cat_columns])
+            # Keep as sparse matrix if possible, convert only when needed
+            encoded_df = pd.DataFrame.sparse.from_spmatrix(
+                encoded_data, 
+                columns=encoder.get_feature_names_out()
+            )
+            df_num = df_curr.drop(non_numeric_columns, axis=1)  # Drop all non-numeric
             df_num = pd.concat([df_num, encoded_df.reset_index(drop=True)], axis=1)
         else:
-            df_num = df_curr
+            df_num = df_curr.select_dtypes(include=[np.number])
 
         df_for_multivariate = df_num.drop(columns=[c for c in id_columns if c in df_num.columns])
         multivariate_outliers = pd.DataFrame()
