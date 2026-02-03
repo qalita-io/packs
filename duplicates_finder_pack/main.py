@@ -36,7 +36,7 @@ def _count_duplicates_polars(paths, uniqueness_columns):
     
     # Get total rows
     try:
-        total_rows = lf.select(pl.len()).collect(streaming=True).item()
+        total_rows = lf.select(pl.len()).collect(engine="streaming").item()
     except Exception:
         total_rows = lf.select(pl.len()).collect().item()
     
@@ -47,7 +47,7 @@ def _count_duplicates_polars(paths, uniqueness_columns):
     )
     
     try:
-        unique_df = unique_count_lf.collect(streaming=True)
+        unique_df = unique_count_lf.collect(engine="streaming")
     except Exception:
         unique_df = unique_count_lf.collect()
     
@@ -79,7 +79,7 @@ def _get_duplicate_rows_polars(paths, uniqueness_columns, limit=None):
         dup_rows_lf = dup_rows_lf.head(limit)
     
     try:
-        return dup_rows_lf.collect(streaming=True).to_pandas()
+        return dup_rows_lf.collect(engine="streaming").to_pandas()
     except Exception:
         return dup_rows_lf.collect().to_pandas()
 

@@ -50,7 +50,7 @@ def _get_row_count_efficient(paths):
     if POLARS_AVAILABLE:
         try:
             lf = pl.scan_parquet(parquet_paths)
-            return lf.select(pl.len()).collect(streaming=True).item()
+            return lf.select(pl.len()).collect(engine="streaming").item()
         except Exception:
             pass
     

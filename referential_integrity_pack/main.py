@@ -27,7 +27,7 @@ def _find_missing_fks_polars(parent_paths, child_paths, parent_key, child_key):
     child_lf = pl.scan_parquet(child_paths).select(child_key)
     
     # Get total child count
-    child_count = child_lf.select(pl.len()).collect(streaming=True).item()
+    child_count = child_lf.select(pl.len()).collect(engine="streaming").item()
     
     # Rename child columns to match parent for join (if keys have different names)
     if parent_key != child_key:
@@ -43,7 +43,7 @@ def _find_missing_fks_polars(parent_paths, child_paths, parent_key, child_key):
     
     # Count orphans using streaming
     try:
-        orphan_count = orphans_lf.select(pl.len()).collect(streaming=True).item()
+        orphan_count = orphans_lf.select(pl.len()).collect(engine="streaming").item()
     except Exception:
         orphan_count = orphans_lf.select(pl.len()).collect().item()
     
