@@ -9,7 +9,7 @@ license = {text = "Proprietary"}
 readme = "README.md"
 requires-python = ">=3.10,<3.12"
 dependencies = [
-    "qalita-core>=1.4.0",
+    "qalita-core>=1.5.0",
     "great-expectations>=0.16.0",
     "pyarrow>=19.0.0",
 ]
