@@ -20,5 +20,5 @@ tags:
 - Retail
 type: validity
 url: https://github.com/qalita-io/packs/tree/main/pii_scanner_pack
-version: 0.1.19
+version: 0.1.20
 visibility: public
