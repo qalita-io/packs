@@ -13,6 +13,7 @@ from qalita_core.aggregation import (
 )
 import json
 import pandas as pd
+import numpy as np
 import os
 from ydata_profiling import ProfileReport
 from datetime import datetime
@@ -368,6 +369,35 @@ with Pack() as pack:
                         },
                     }
                     pack.metrics.data.append(entry)
+
+        ############################  Advanced Statistics (percentiles, stddev, variance)
+        # Compute advanced statistics for numeric columns
+        numeric_cols = df.select_dtypes(include=[np.number]).columns
+        for col in numeric_cols:
+            col_data = df[col].dropna()
+            if len(col_data) > 0:
+                col_scope = {
+                    "perimeter": "column",
+                    "value": col,
+                    "parent_scope": {"perimeter": "dataset", "value": dataset_name},
+                }
+                # Percentiles (: percentile_10_in_range, percentile_25_in_range, etc.)
+                pack.metrics.data.extend([
+                    {"key": "percentile_10", "value": str(round(float(np.percentile(col_data, 10)), 4)), "scope": col_scope.copy()},
+                    {"key": "percentile_25", "value": str(round(float(np.percentile(col_data, 25)), 4)), "scope": col_scope.copy()},
+                    {"key": "percentile_75", "value": str(round(float(np.percentile(col_data, 75)), 4)), "scope": col_scope.copy()},
+                    {"key": "percentile_90", "value": str(round(float(np.percentile(col_data, 90)), 4)), "scope": col_scope.copy()},
+                ])
+                # Standard deviation (: sample_stddev_in_range, population_stddev_in_range)
+                pack.metrics.data.extend([
+                    {"key": "sample_stddev", "value": str(round(float(col_data.std(ddof=1)), 4)), "scope": col_scope.copy()},
+                    {"key": "population_stddev", "value": str(round(float(col_data.std(ddof=0)), 4)), "scope": col_scope.copy()},
+                ])
+                # Variance (: sample_variance_in_range, population_variance_in_range)
+                pack.metrics.data.extend([
+                    {"key": "sample_variance", "value": str(round(float(col_data.var(ddof=1)), 4)), "scope": col_scope.copy()},
+                    {"key": "population_variance", "value": str(round(float(col_data.var(ddof=0)), 4)), "scope": col_scope.copy()},
+                ])
 
         # Score basé sur p_cells_missing (directement depuis general_data)
         if not treat_chunks_as_one:

@@ -1,0 +1,22 @@
+compatible_sources:
+- mysql
+- postgresql
+- sqlite
+- oracle
+- csv
+- excel
+- file
+- folder
+description: Validates numeric data against configurable ranges and constraints.
+  Includes latitude/longitude validation and negative value detection.
+icon: icon.png
+name: numeric_validation
+tags:
+- Data Validation
+- Data Quality
+- Numeric Ranges
+- Geospatial
+type: validity
+url: https://github.com/qalita-io/packs/tree/main/numeric_validation_pack
+version: 0.1.0
+visibility: public

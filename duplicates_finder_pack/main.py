@@ -158,6 +158,19 @@ with Pack() as pack:
                     "value": int(total_duplicates), 
                     "scope": {"perimeter": "dataset", "value": pack.source_config["name"]}
                 })
+                #  distinct_count and distinct_percent metrics
+                distinct_count = total_rows - total_duplicates
+                distinct_percent = distinct_count / total_rows if total_rows > 0 else 0
+                pack.metrics.data.append({
+                    "key": "distinct_count", 
+                    "value": int(distinct_count), 
+                    "scope": {"perimeter": "dataset", "value": pack.source_config["name"]}
+                })
+                pack.metrics.data.append({
+                    "key": "distinct_percent", 
+                    "value": str(round(distinct_percent, 4)), 
+                    "scope": {"perimeter": "dataset", "value": pack.source_config["name"]}
+                })
                 
                 if score < 0.9:
                     pack.recommendations.data.append({
@@ -228,6 +241,23 @@ with Pack() as pack:
                 {
                     "key": "duplicates",
                     "value": int(total_duplicates),
+                    "scope": {"perimeter": "dataset", "value": dataset_label},
+                }
+            )
+            #  distinct_count and distinct_percent metrics
+            distinct_count = total_rows - total_duplicates
+            distinct_percent = distinct_count / total_rows if total_rows > 0 else 0
+            pack.metrics.data.append(
+                {
+                    "key": "distinct_count",
+                    "value": int(distinct_count),
+                    "scope": {"perimeter": "dataset", "value": dataset_label},
+                }
+            )
+            pack.metrics.data.append(
+                {
+                    "key": "distinct_percent",
+                    "value": str(round(distinct_percent, 4)),
                     "scope": {"perimeter": "dataset", "value": dataset_label},
                 }
             )

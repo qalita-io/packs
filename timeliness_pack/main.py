@@ -3,9 +3,9 @@ import pandas as pd
 from dateutil.parser import parse
 from datetime import datetime
 import re
+import os
 from qalita_core.pack import Pack
 from qalita_core.aggregation import detect_chunked_from_items, TimelinessAggregator, normalize_and_dedupe_recommendations
-import pandas as pd
 
 # --- Chargement des données ---
 # Pour un fichier : pack.load_data("source")
@@ -146,6 +146,45 @@ with Pack() as pack:
             "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
         }
     )
+
+    ############################  Data Staleness (based on file metadata)
+    # Compute data_staleness_days based on file modification time
+    if pack.source_config.get("type") == "file":
+        try:
+            file_path = pack.source_config.get("config", {}).get("path")
+            if file_path and os.path.exists(file_path):
+                mtime = os.path.getmtime(file_path)
+                staleness_days = (datetime.now() - datetime.fromtimestamp(mtime)).days
+                pack.metrics.data.append({
+                    "key": "data_staleness_days",
+                    "value": str(staleness_days),
+                    "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
+                })
+                print(f"Data staleness: {staleness_days} days since last file modification")
+        except Exception as e:
+            print(f"Could not compute data staleness: {e}")
+    elif pack.source_config.get("type") == "folder":
+        # For folder sources, get the most recent file modification time
+        try:
+            folder_path = pack.source_config.get("config", {}).get("path")
+            if folder_path and os.path.exists(folder_path):
+                latest_mtime = 0
+                for root, dirs, files in os.walk(folder_path):
+                    for f in files:
+                        fpath = os.path.join(root, f)
+                        mtime = os.path.getmtime(fpath)
+                        if mtime > latest_mtime:
+                            latest_mtime = mtime
+                if latest_mtime > 0:
+                    staleness_days = (datetime.now() - datetime.fromtimestamp(latest_mtime)).days
+                    pack.metrics.data.append({
+                        "key": "data_staleness_days",
+                        "value": str(staleness_days),
+                        "scope": {"perimeter": "dataset", "value": pack.source_config["name"]},
+                    })
+                    print(f"Data staleness: {staleness_days} days since last file modification in folder")
+        except Exception as e:
+            print(f"Could not compute data staleness for folder: {e}")
 
     ############################ Compute timeliness_score for Each Column
 
