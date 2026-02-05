@@ -1,0 +1,19 @@
+{
+  "job": {
+    "patterns": [
+      {"column": "email", "type": "email"},
+      {"column": "user_id", "type": "uuid"},
+      {"column": "ip_address", "type": "ipv4"}
+    ]
+  },
+  "charts": {
+    "overview": [
+      {"metric_key": "score", "chart_type": "text", "display_title": true, "justify": true}
+    ],
+    "scoped": [
+      {"metric_key": "invalid_email_format_found", "chart_type": "bar_chart", "display_title": true, "justify": false},
+      {"metric_key": "invalid_uuid_format_found", "chart_type": "bar_chart", "display_title": true, "justify": false},
+      {"metric_key": "invalid_ip4_address_format_found", "chart_type": "bar_chart", "display_title": true, "justify": false}
+    ]
+  }
+}

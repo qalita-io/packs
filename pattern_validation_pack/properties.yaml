@@ -1,0 +1,22 @@
+compatible_sources:
+- mysql
+- postgresql
+- sqlite
+- oracle
+- csv
+- excel
+- file
+- folder
+description: Validates data formats using predefined patterns (email, UUID, IP, URL)
+  and custom regex rules. Implements  pattern validation checks.
+icon: icon.png
+name: pattern_validation
+tags:
+- Data Validation
+- Data Quality
+- Format Validation
+- Regex
+type: validity
+url: https://github.com/qalita-io/packs/tree/main/pattern_validation_pack
+version: 0.1.0
+visibility: public

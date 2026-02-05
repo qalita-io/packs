@@ -1,0 +1,22 @@
+compatible_sources:
+- mysql
+- postgresql
+- sqlite
+- oracle
+- csv
+- excel
+- file
+- folder
+description: Validates text data for length constraints, word counts, and whitespace
+  issues. Detects empty text, whitespace-only values, and null placeholders.
+icon: icon.png
+name: text_validation
+tags:
+- Data Validation
+- Data Quality
+- Text Analysis
+- Completeness
+type: validity
+url: https://github.com/qalita-io/packs/tree/main/text_validation_pack
+version: 0.1.0
+visibility: public

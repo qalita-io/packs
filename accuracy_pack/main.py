@@ -82,6 +82,52 @@ with Pack() as pack:
             {"key": "score", "value": str(round(mean_proportion_score, 2)), "scope": {"perimeter": "dataset", "value": dataset_label}}
         )
 
+        ############################  Latitude/Longitude Validation
+        # Auto-detect and validate latitude columns (: valid_latitude_percent, invalid_latitude)
+        for col in df_curr.columns:
+            col_lower = col.lower()
+            col_scope = {"perimeter": "column", "value": col, "parent_scope": {"perimeter": "dataset", "value": dataset_label}}
+            
+            # Latitude validation (-90 to 90)
+            if 'lat' in col_lower and pd.api.types.is_numeric_dtype(df_curr[col]):
+                col_data = df_curr[col].dropna()
+                if len(col_data) > 0:
+                    invalid_lat = ((col_data < -90) | (col_data > 90)).sum()
+                    valid_lat_percent = 1 - (invalid_lat / len(col_data)) if len(col_data) > 0 else 1
+                    pack.metrics.data.append(
+                        {"key": "invalid_latitude", "value": int(invalid_lat), "scope": col_scope.copy()}
+                    )
+                    pack.metrics.data.append(
+                        {"key": "valid_latitude_percent", "value": str(round(valid_lat_percent, 4)), "scope": col_scope.copy()}
+                    )
+                    if invalid_lat > 0:
+                        pack.recommendations.data.append({
+                            "content": f"Column '{col}' has {invalid_lat} invalid latitude values (outside -90 to 90 range).",
+                            "type": "Invalid Latitude",
+                            "scope": col_scope.copy(),
+                            "level": determine_recommendation_level(invalid_lat / len(col_data)),
+                        })
+            
+            # Longitude validation (-180 to 180)
+            if ('lon' in col_lower or 'lng' in col_lower) and pd.api.types.is_numeric_dtype(df_curr[col]):
+                col_data = df_curr[col].dropna()
+                if len(col_data) > 0:
+                    invalid_lon = ((col_data < -180) | (col_data > 180)).sum()
+                    valid_lon_percent = 1 - (invalid_lon / len(col_data)) if len(col_data) > 0 else 1
+                    pack.metrics.data.append(
+                        {"key": "invalid_longitude", "value": int(invalid_lon), "scope": col_scope.copy()}
+                    )
+                    pack.metrics.data.append(
+                        {"key": "valid_longitude_percent", "value": str(round(valid_lon_percent, 4)), "scope": col_scope.copy()}
+                    )
+                    if invalid_lon > 0:
+                        pack.recommendations.data.append({
+                            "content": f"Column '{col}' has {invalid_lon} invalid longitude values (outside -180 to 180 range).",
+                            "type": "Invalid Longitude",
+                            "scope": col_scope.copy(),
+                            "level": determine_recommendation_level(invalid_lon / len(col_data)),
+                        })
+
         for column in df_curr.columns:
             for item in pack.metrics.data:
                 scope = item.get("scope", {})
