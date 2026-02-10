@@ -7,8 +7,8 @@ compatible_sources:
 - excel
 - file
 - folder
-description: Validates numeric data against configurable ranges and constraints.
-  Includes latitude/longitude validation and negative value detection.
+description: Validates numeric data against configurable ranges and constraints. Includes
+  latitude/longitude validation and negative value detection.
 icon: icon.png
 name: numeric_validation
 tags:
