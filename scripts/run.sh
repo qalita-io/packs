@@ -152,6 +152,8 @@ echo "Venv python version: $(python -V 2>&1)"
 # Install the requirements using uv
 echo "Installing requirements using uv..."
 export PIP_DISABLE_PIP_VERSION_CHECK=1
+# Tell uv to use our venv instead of the project default .venv (avoids VIRTUAL_ENV mismatch warning)
+export UV_PROJECT_ENVIRONMENT="$VENV_PATH"
 
 # Upgrade pip toolchain
 python -m pip install --upgrade --quiet pip setuptools wheel
