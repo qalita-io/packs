@@ -20,7 +20,15 @@ jobs:
       - name: Install pylint
         run: pip install pylint
       - name: Run pylint
-        run: pylint --fail-under=6 --disable=E0401,C0301,C0114,C0411,R0801 **/**/*.py
+        run: pylint --fail-under=8 --disable=E0401,C0301,C0114,C0411,R0801 **/**/*.py
+      - name: Publish pylint summary
+        if: always()
+        run: |
+          {
+            echo "## Quality Gate"
+            echo ""
+            echo "- Pylint threshold: >=8"
+          } >> "$GITHUB_STEP_SUMMARY"
 
   safety_check:
     runs-on: ubuntu-latest

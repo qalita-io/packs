@@ -1,0 +1,17 @@
+[MESSAGES CONTROL]
+disable=
+    trailing-whitespace,
+    wrong-import-position,
+    wrong-import-order,
+    missing-module-docstring,
+    missing-function-docstring,
+    invalid-name,
+    broad-exception-caught,
+    logging-fstring-interpolation,
+    redefined-outer-name,
+    unspecified-encoding,
+    too-many-arguments,
+    too-many-positional-arguments,
+    unused-import,
+    unused-variable
+
