@@ -152,8 +152,8 @@ echo "Venv python version: $(python -V 2>&1)"
 # Install the requirements using uv
 echo "Installing requirements using uv..."
 export PIP_DISABLE_PIP_VERSION_CHECK=1
-# Tell uv to use our venv instead of the project default .venv (avoids VIRTUAL_ENV mismatch warning)
-export UV_PROJECT_ENVIRONMENT="$VENV_PATH"
+# uv may complain when a project contains .venv; force target interpreter and clear inherited active-venv hint.
+unset VIRTUAL_ENV
 
 # Upgrade pip toolchain
 python -m pip install --upgrade --quiet pip setuptools wheel
@@ -170,9 +170,9 @@ python -m pip uninstall -y dask dask-sql distributed soda-core-pandas-dask 2>/de
 
 # Export lock to requirements format and install
 uv export --no-hashes --no-emit-project > requirements.lock.txt 2>/dev/null
-if ! uv pip install -r requirements.lock.txt; then
+if ! uv pip install --python "$VENV_PATH/bin/python" -r requirements.lock.txt; then
     echo "Failed to install from exported lock, trying direct install..."
-    if ! uv pip install -e .; then
+    if ! uv pip install --python "$VENV_PATH/bin/python" -e .; then
         echo "Failed to install requirements with uv."
         exit 1
     fi
